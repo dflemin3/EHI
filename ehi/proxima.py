@@ -26,10 +26,10 @@ betaProxima = -1.23              # Ribas et al. (2005)
 betaProximaSig = 0.1             # Arbitrary
 
 # Planet properties
-porbProximab = 11.186                # Anglada-Escude et al. (2016) [d]
-porbProximabSig = 0.002              # Anglada-Escude et al. (2016) [d]
-mpsiniProximab = 1.27             # Anglada-Escude et al. (2016) [Mearth]
-mpsiniProximabSig = 0.18          # Anglada-Escude et al. (2016) [Mearth]
+porbProximab = 11.186            # Anglada-Escude et al. (2016) [d]
+porbProximabSig = 0.002          # Anglada-Escude et al. (2016) [d]
+mpsiniProximab = 1.27            # Anglada-Escude et al. (2016) [Mearth]
+mpsiniProximabSig = 0.18         # Anglada-Escude et al. (2016) [Mearth]
 
 
 ### Prior, likelihood, MCMC functions ###
@@ -74,12 +74,14 @@ def samplePriorPROXIMA(size=1, **kwargs):
     Sample dMass, dSatXUVFrac, dSatXUVTime, dStopTime, and dXUVBeta from their
     prior distributions.
     """
+
     ret = []
     for ii in range(size):
+        while True:
             guess = [np.random.uniform(low=0.1, high=0.15),
                      np.random.uniform(low=-5.0, high=-2.0),
                      np.random.uniform(low=-0.3, high=1.0),
-                     norm.rvs(loc=ageProxima, scale=,ageProximaSig size=1)[0],
+                     norm.rvs(loc=ageProxima, scale=ageProximaSig, size=1)[0],
                      norm.rvs(loc=betaProxima, scale=betaProximaSig, size=1)[0]]
             if not np.isinf(LnPriorPROXIMA(guess, **kwargs)):
                 ret.append(guess)
@@ -96,8 +98,8 @@ kwargsPROXIMA = {"PATH" : ".",
                  "LUM" : lumProxima,
                  "LUMSIG" : lumProxima,
                  "LnPrior" : LnPriorPROXIMA,
-                 "LUMXUV" : logLXUVProxima,
-                 "LUMXUVSIG" : logLXUVProximaSig,
+                 "LOGLUMXUV" : logLXUVProxima,
+                 "LOGLUMXUVSIG" : logLXUVProximaSig,
                  "PORB" : porbProximab,
                  "PORBSIG" : porbProximabSig,
                  "PriorSample" : samplePriorPROXIMA}

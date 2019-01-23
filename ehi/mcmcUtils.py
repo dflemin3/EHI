@@ -13,6 +13,7 @@ import os, sys
 import random
 import argparse
 from . import utils
+from . import proxima
 
 
 __all__ = ["FunctionWrapper", "LnLike", "GetEvol", "RunMCMC"]
@@ -45,16 +46,106 @@ def LnLike(x, **kwargs):
 
     # Get the current vector
     dMass, dSatXUVFrac, dSatXUVTime, dStopTime, dXUVBeta = x
-    dSatXUVFrac = 10 ** dSatXUVFrac
-    dStopTime *= 1.e9
-    dOutputTime = dStopTime
-    dSatXUVTime = 10 ** dSatXUVTime
+    dSatXUVFrac = 10 ** dSatXUVFrac # Unlog
+    dStopTime *= 1.e9 # Convert from Gyr -> yr
+    dOutputTime = dStopTime # Output only at the end of the simulation
+    dSatXUVTime = 10 ** dSatXUVTime # Unlog
 
     # Get the prior probability
     lnprior = kwargs["LnPrior"](x, **kwargs)
     if np.isinf(lnprior):
-        return -np.inf, [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan]
+        return -np.inf, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
 
+    # Get strings containing VPLanet input files (they must be provided!)
+    try:
+        planet_in = kwargs.get("PLANETIN")
+        star_in = kwargs.get("STARIN")
+        vpl_in = kwargs.get("VPLIN")
+    except KeyError as err:
+        print("ERROR: Must supply PLANETIN, STARIN, VPLIN.")
+        raise
+
+    # Get PATH
+    try:
+        PATH = kwargs.get("PATH")
+    except KeyError as err:
+        print("ERROR: Must supply PATH.")
+        raise
+
+    # Randomize file names
+    sysName = 'vpl%012x' % random.randrange(16**12)
+    planetName = 'pl%012x' % random.randrange(16**12)
+    starName = 'st%012x' % random.randrange(16**12)
+    sysFile = sysName + '.in'
+    planetFile = planetName + '.in'
+    starFile = starName + '.in'
+    logfile = sysName + '.log'
+    planetFwFile = '%s.planet.forward' % sysName
+    starFwFile = '%s.star.forward' % sysName
+
+    # Get the planet mass (all prior)
+    dPlanetMass = -np.inf
+    while -dPlanetMass > 10:
+        inc = np.arccos(1 - np.random.random())
+        msini = proxima.mpsiniProximab + proxima.mpsiniProximabSig * np.random.randn()
+        dPlanetMass = -msini / np.sin(inc)
+
+    # Get planet Porb (all prior)
+    dPorbInit = kwargs.get("PORB") + kwargs.get("PORBSIG") * np.random.randn()
+
+    # Populate the planet input file (periods negative to make units Mearth in VPLanet)
+    planet_in = re.sub("%s(.*?)#" % "dMass", "%s %.6e #" % ("dMass", -dPlanetMass), planet_in)
+    planet_in = re.sub("%s(.*?)#" % "dOrbPeriod", "%s %.6e #" % ("dOrbPeriod", -dPorbInit), planet_in)
+
+    with open(os.path.join(PATH, "output", planetFile), 'w') as f:
+        print(planet_in, file = f)
+
+    # Populate the star input file
+    print(star_in)
+    star_in = re.sub("%s(.*?)#" % "dMass", "%s %.6e #" % ("dMass", dMass), star_in)
+    star_in = re.sub("%s(.*?)#" % "dSatXUVFrac", "%s %.6e #" % ("dSatXUVFrac", dSatXUVFrac), star_in)
+    star_in = re.sub("%s(.*?)#" % "dSatXUVTime", "%s %.6e #" % ("dSatXUVTime", -dSatXUVTime), star_in)
+    star_in = re.sub("%s(.*?)#" % "dXUVBeta", "%s %.6e #" % ("dXUVBeta", -dXUVBeta), star_in)
+    with open(os.path.join(PATH, "output", starFile), 'w') as f:
+        print(star_in, file = f)
+
+    # Populate the system input file
+    vpl_in = re.sub('%s(.*?)#' % "dStopTime", '%s %.6e #' % ("dStopTime", dStopTime), vpl_in)
+    vpl_in = re.sub('%s(.*?)#' % "dOutputTime", '%s %.6e #' % ("dOutputTime", dOutputTime), vpl_in)
+    vpl_in = re.sub('sSystemName(.*?)#', 'sSystemName %s #' % sysName, vpl_in)
+    vpl_in = re.sub('saBodyFiles(.*?)#', 'saBodyFiles %s %s #' % (starFile, planetFile), vpl_in)
+    with open(os.path.join(PATH, "output", sysFile), 'w') as f:
+        print(vpl_in, file = f)
+
+    # Run VPLANET and get the output, then delete the output files
+    subprocess.call(["vplanet", sysFile], cwd = os.path.join(PATH, "output"))
+    output = vpl.GetOutput(os.path.join(PATH, "output"), logfile = logfile)
+
+    try:
+        os.remove(os.path.join(PATH, "output", planetFile))
+        os.remove(os.path.join(PATH, "output", starFile))
+        os.remove(os.path.join(PATH, "output", sysFile))
+        os.remove(os.path.join(PATH, "output", planetFwFile))
+        os.remove(os.path.join(PATH, "output", starFwFile))
+        os.remove(os.path.join(PATH, "output", logfile))
+    except FileNotFoundError:
+        # Run failed!
+        return -np.inf, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
+
+    # Ensure we ran for as long as we set out to
+    if not output.log.final.system.Age / utils.YEARSEC >= dStopTime:
+        return -np.inf, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
+
+    # Get output parameters
+    dPorb = dPorbInit # XXX hack since we don't evolve this quantity
+    dEnvMass = float(output.log.final.planet.EnvelopeMass)
+    dWaterMass = float(output.log.final.planet.SurfWaterMass)
+    dOxygenMass = float(output.log.final.planet.OxygenMass) + float(output.log.final.planet.OxygenMantleMass)
+    dLum = float(output.log.final.star.Luminosity)
+    dLogLumXUV = np.log10(float(output.log.final.star.LXUVStellar)) # Logged!
+    dRGTime = float(output.log.final.planet.RGDuration)
+
+    # Extract constraints
     # Must have orbital period, error, for planet
     porb = kwargs.get("PORB")
     porbSig = kwargs.get("PORBSIG")
@@ -65,13 +156,44 @@ def LnLike(x, **kwargs):
         lum = None
         lumSig = None
     try:
-        lumXUV = kwargs.get("LUMXUV")
-        lumXUVSig = kwargs.get("LUMXUVSIG")
+        logLumXUV = kwargs.get("LOGLUMXUV")
+        logLumXUVSig = kwargs.get("LOGLUMXUVSIG")
     except KeyError:
-        lumXUV = None
-        lumXUVSig = None
+        logLumXUV = None
+        logLumXUVSig = None
 
-    # Get strings containing VPLanet input filex (they must be provided!)
+    # Compute the likelihood using provided constraints, assuming we have
+    # radius constraints for both stars
+    lnlike = ((dPorb - porb) / porbSig) ** 2
+    if lum is not None:
+        lnlike += ((dLum - lum) / lumSig) ** 2
+    if logLumXUV is not None:
+        lnlike += ((dLogLumXUV - logLumXUV) / logLumXUVSig) ** 2
+    lnlike = -0.5 * lnlike + lnprior
+
+    # Return likelihood and blobs
+    return lnlike, dPorb, dPlanetMass, dLum, dLogLumXUV, dRGTime, dEnvMass, dWaterMass, dOxygenMass
+# end function
+
+
+def GetEvol(x, **kwargs):
+    """
+    Run a VPLanet simulation for this initial condition vector, x
+    """
+
+    # Get the current vector
+    dMass, dSatXUVFrac, dSatXUVTime, dStopTime, dXUVBeta = x
+    dSatXUVFrac = 10 ** dSatXUVFrac # Unlog
+    dStopTime *= 1.e9 # Convert from Gyr -> yr
+    dOutputTime = dStopTime # Output only at the end of the simulation
+    dSatXUVTime = 10 ** dSatXUVTime # Unlog
+
+    # Get the prior probability
+    lnprior = kwargs["LnPrior"](x, **kwargs)
+    if np.isinf(lnprior):
+        return None
+
+    # Get strings containing VPLanet input files (they must be provided!)
     try:
         planet_in = kwargs.get("PLANETIN")
         star_in = kwargs.get("STARIN")
@@ -105,24 +227,21 @@ def LnLike(x, **kwargs):
         msini = Mpsini + sigMpsini * np.random.randn()
         dPlanetMass = -msini / np.sin(inc)
 
-    # Negative for vplanet
-    dSatXUVTime *= -1
-    dXUVBeta *= -1
+    # Get planet Porb (all prior)
+    dPorbInit = kwargs.get("PORB") + kwargs.get("PORBSIG") * np.random.randn()
 
-    # Populate the planet input file (periods negative to make units days in VPLanet)
-    planet_in = re.sub("%s(.*?)#" % "dMass", "%s %.6e #" % ("dMass", dMass1), planet_in)
-    planet_in = re.sub("%s(.*?)#" % "dRotPeriod", "%s %.6e #" % ("dRotPeriod", -dProt1), planet_in)
-    planet_in = re.sub("%s(.*?)#" % "dTidalTau", "%s %.6e #" % ("dTidalTau", dTau1), planet_in)
+    # Populate the planet input file (periods negative to make units Mearth in VPLanet)
+    planet_in = re.sub("%s(.*?)#" % "dMass", "%s %.6e #" % ("dMass", -dPlanetMass), planet_in)
+    planet_in = re.sub("%s(.*?)#" % "dOrbPeriod", "%s %.6e #" % ("dOrbPeriod", -dPorbInit), planet_in)
 
     with open(os.path.join(PATH, "output", planetFile), 'w') as f:
         print(planet_in, file = f)
 
     # Populate the star input file
-    star_in = re.sub("%s(.*?)#" % "dMass", "%s %.6e #" % ("dMass", dMass2), star_in)
-    star_in = re.sub("%s(.*?)#" % "dRotPeriod", "%s %.6e #" % ("dRotPeriod", -dProt2), star_in)
-    star_in = re.sub("%s(.*?)#" % "dTidalTau", "%s %.6e #" % ("dTidalTau", dTau2), star_in)
-    star_in = re.sub("%s(.*?)#" % "dOrbPeriod", "%s %.6e #" % ("dOrbPeriod", -dPorb), star_in)
-    star_in = re.sub("%s(.*?)#" % "dEcc", "%s %.6e #" % ("dEcc", dEcc), star_in)
+    star_in = re.sub("%s(.*?)#" % "dMass", "%s %.6e #" % ("dMass", dMass), star_in)
+    star_in = re.sub("%s(.*?)#" % "dSatXUVFrac", "%s %.6e #" % ("dSatXUVFrac", dSatXUVFrac), star_in)
+    star_in = re.sub("%s(.*?)#" % "dSatXUVTime", "%s %.6e #" % ("dSatXUVTime", -dSatXUVTime), star_in)
+    star_in = re.sub("%s(.*?)#" % "dXUVBeta", "%s %.6e #" % ("dXUVBeta", -dXUVBeta), star_in)
     with open(os.path.join(PATH, "output", starFile), 'w') as f:
         print(star_in, file = f)
 
@@ -130,132 +249,7 @@ def LnLike(x, **kwargs):
     vpl_in = re.sub('%s(.*?)#' % "dStopTime", '%s %.6e #' % ("dStopTime", dStopTime), vpl_in)
     vpl_in = re.sub('%s(.*?)#' % "dOutputTime", '%s %.6e #' % ("dOutputTime", dOutputTime), vpl_in)
     vpl_in = re.sub('sSystemName(.*?)#', 'sSystemName %s #' % sysName, vpl_in)
-    vpl_in = re.sub('saBodyFiles(.*?)#', 'saBodyFiles %s %s #' % (planetFile, starFile), vpl_in)
-    with open(os.path.join(PATH, "output", sysFile), 'w') as f:
-        print(vpl_in, file = f)
-
-    # Run VPLANET and get the output, then delete the output files
-    subprocess.call(["vplanet", sysFile], cwd = os.path.join(PATH, "output"))
-    output = vpl.GetOutput(os.path.join(PATH, "output"), logfile = logfile)
-
-    try:
-        os.remove(os.path.join(PATH, "output", planetFile))
-        os.remove(os.path.join(PATH, "output", starFile))
-        os.remove(os.path.join(PATH, "output", sysFile))
-        os.remove(os.path.join(PATH, "output", planetFwFile))
-        os.remove(os.path.join(PATH, "output", starFwFile))
-        os.remove(os.path.join(PATH, "output", logfile))
-    except FileNotFoundError:
-        # Run failed!
-        return -np.inf, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
-
-    # Ensure we ran for as long as we set out to
-    if not output.log.final.system.Age >= dStopTime:
-        return -np.inf, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
-
-    # Get output parameters
-    dRad1 = float(output.log.final.planet.Radius)
-    dRad2 = float(output.log.final.star.Radius)
-    dTeff1 = float(output.log.final.planet.Temperature)
-    dTeff2 = float(output.log.final.star.Temperature)
-    dLum1 = float(output.log.final.star.Luminosity)
-    dLum2 = float(output.log.final.star.Luminosity)
-    dPorb = float(output.log.final.star.OrbPeriod)
-    dEcc = float(output.log.final.star.Eccentricity)
-    dProt1 = float(output.log.final.planet.RotPer)
-    dProt2 = float(output.log.final.star.RotPer)
-
-    # Compute the likelihood using provided constraints, assuming we have
-    # radius constraints for both stars
-    lnlike = ((dRad1 - r1) / r1Sig) ** 2
-    lnlike += ((dRad2 - r2) / r2Sig) ** 2
-    if teff1 is not None:
-        lnlike += ((dTeff1 - teff1) / teff1Sig) ** 2
-    if teff2 is not None:
-        lnlike += ((dTeff2 - teff2) / teff2Sig) ** 2
-    if lum1 is not None:
-        lnlike += ((dLum1 - lum1) / lum1Sig) ** 2
-    if lum2 is not None:
-        lnlike += ((dLum2 - lum2) / lum2Sig) ** 2
-    if porb is not None:
-        lnlike += ((dPorb - porb) / porbSig) ** 2
-    if ecc is not None:
-        lnlike += ((dEcc - ecc) / eccSig) ** 2
-    if prot1 is not None:
-        lnlike += ((dProt1 - prot1) / prot1Sig) ** 2
-    if prot2 is not None:
-        lnlike += ((dProt2 - prot2) / prot2Sig) ** 2
-    lnlike = -0.5 * lnlike + lnprior
-
-    # Return likelihood and blobs
-    return lnlike, dProt1, dProt2, dPorb, dEcc, dRad1, dRad2, dLum1, dLum2, dTeff1, dTeff2
-# end function
-
-
-def GetEvol(x, **kwargs):
-    """
-    Run a VPLanet simulation for this initial condition vector, x
-    """
-
-    # Get the current vector
-    dMass1, dMass2, dProt1, dProt2, dTau1, dTau2, dPorb, dEcc, dAge = x
-
-    # Unlog tau, convect to yr
-    dTau1 = (10 ** dTau1) / utils.YEARSEC
-    dTau2 = (10 ** dTau2) / utils.YEARSEC
-
-    # Convert age to yr from Gyr, set stop time, output time to age of system
-    dStopTime = dAge * 1.0e9
-    dOutputTime = dStopTime
-
-    # Get the prior probability
-    lnprior = kwargs["LnPrior"](x, **kwargs)
-
-    # If not finite, invalid initial conditions
-    if np.isinf(lnprior):
-        return None
-
-    # Get strings containing VPLanet input filex (they must be provided!)
-    try:
-        planet_in = kwargs.get("PLANETIN")
-        star_in = kwargs.get("STARIN")
-        vpl_in = kwargs.get("VPLIN")
-    except KeyError as err:
-        print("ERROR: must supply PLANETIN, STARIN, VPLIN.")
-        raise
-
-    # Randomize file names
-    sysName = 'vpl%012x' % random.randrange(16**12)
-    planetName = 'pri%012x' % random.randrange(16**12)
-    starName = 'sec%012x' % random.randrange(16**12)
-    sysFile = sysName + '.in'
-    planetFile = planetName + '.in'
-    starFile = starName + '.in'
-    logfile = sysName + '.log'
-    planetFwFile = '%s.planet.forward' % sysName
-    starFwFile = '%s.star.forward' % sysName
-
-    # Populate the planet input file (periods negative to make units days in VPLanet)
-    planet_in = re.sub("%s(.*?)#" % "dMass", "%s %.6e #" % ("dMass", dMass1), planet_in)
-    planet_in = re.sub("%s(.*?)#" % "dRotPeriod", "%s %.6e #" % ("dRotPeriod", -dProt1), planet_in)
-    planet_in = re.sub("%s(.*?)#" % "dTidalTau", "%s %.6e #" % ("dTidalTau", dTau1), planet_in)
-    with open(os.path.join(PATH, "output", planetFile), 'w') as f:
-        print(planet_in, file = f)
-
-    # Populate the star input file
-    star_in = re.sub("%s(.*?)#" % "dMass", "%s %.6e #" % ("dMass", dMass2), star_in)
-    star_in = re.sub("%s(.*?)#" % "dRotPeriod", "%s %.6e #" % ("dRotPeriod", -dProt2), star_in)
-    star_in = re.sub("%s(.*?)#" % "dTidalTau", "%s %.6e #" % ("dTidalTau", dTau2), star_in)
-    star_in = re.sub("%s(.*?)#" % "dOrbPeriod", "%s %.6e #" % ("dOrbPeriod", -dPorb), star_in)
-    star_in = re.sub("%s(.*?)#" % "dEcc", "%s %.6e #" % ("dEcc", dEcc), star_in)
-    with open(os.path.join(PATH, "output", starFile), 'w') as f:
-        print(star_in, file = f)
-
-    # Populate the system input file
-    vpl_in = re.sub('%s(.*?)#' % "dStopTime", '%s %.6e #' % ("dStopTime", dStopTime), vpl_in)
-    vpl_in = re.sub('%s(.*?)#' % "dOutputTime", '%s %.6e #' % ("dOutputTime", dOutputTime), vpl_in)
-    vpl_in = re.sub('sSystemName(.*?)#', 'sSystemName %s #' % sysName, vpl_in)
-    vpl_in = re.sub('saBodyFiles(.*?)#', 'saBodyFiles %s %s #' % (planetFile, starFile), vpl_in)
+    vpl_in = re.sub('saBodyFiles(.*?)#', 'saBodyFiles %s %s #' % (starFile, planetFile), vpl_in)
     with open(os.path.join(PATH, "output", sysFile), 'w') as f:
         print(vpl_in, file = f)
 
@@ -275,7 +269,7 @@ def GetEvol(x, **kwargs):
         return None
 
     # Ensure we ran for as long as we set out to
-    if not output.log.final.system.Age >= dStopTime:
+    if not output.log.final.system.Age / utils.YEARSEC >= dStopTime:
         return None
 
     # Return output
@@ -283,7 +277,7 @@ def GetEvol(x, **kwargs):
 # end function
 
 
-def RunMCMC(x0=None, ndim=9, nwalk=90, nsteps=1000, pool=None, backend=None,
+def RunMCMC(x0=None, ndim=5, nwalk=100, nsteps=5000, pool=None, backend=None,
             restart=False, **kwargs):
     """
     """
@@ -311,7 +305,7 @@ def RunMCMC(x0=None, ndim=9, nwalk=90, nsteps=1000, pool=None, backend=None,
         kwargs["PLANETIN"] = planet_in
     with open(os.path.join(PATH, "star.in"), 'r') as f:
         star_in = f.read()
-        kwargs["starIN"] = star_in
+        kwargs["STARIN"] = star_in
     with open(os.path.join(PATH, "vpl.in"), 'r') as f:
         vpl_in = f.read()
         kwargs["VPLIN"] = vpl_in
@@ -334,10 +328,9 @@ def RunMCMC(x0=None, ndim=9, nwalk=90, nsteps=1000, pool=None, backend=None,
     ### Run MCMC ###
 
     # Define blobs, blob data types
-    dtype = [("dProt1F", np.float64), ("dProt2F", np.float64), ("dPorbF", np.float64),
-             ("dEccF", np.float64), ("dRad1F", np.float64), ("dRad2F", np.float64),
-             ("dLum1F", np.float64), ("dLum2F", np.float64), ("dTeff1F", np.float64),
-             ("dTeff2F", np.float64)]
+    dtype = [("dPorb", np.float64), ("dPlanetMass", np.float64), ("dLum", np.float64),
+             ("dLogLXUV", np.float64), ("dRGTime", np.float64), ("dEnvMass", np.float64),
+             ("dWaterMass", np.float64), ("dOxygenMass", np.float64)]
 
     # Initialize the sampler object
     sampler = emcee.EnsembleSampler(nwalk, ndim, LnLike, kwargs=kwargs, pool=pool,

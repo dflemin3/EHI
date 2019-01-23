@@ -16,7 +16,7 @@ except ImportError:
 
 # Get the long description from the README
 def readme():
-  with open('README.md') as f:
+  with open('README.rst') as f:
     return f.read()
 
 # Read, version funcs taken from:
@@ -39,12 +39,12 @@ def version(path):
     raise RuntimeError("Unable to find version string.")
 
 
-VERSION = version('kicq/__init__.py')
+VERSION = version('ehi/__init__.py')
 
 # Setup!
-setup(name = 'kicq',
+setup(name = 'ehi',
       version = VERSION,
-      description = 'Fitting for tidal parameters of low-mass binary stars',
+      description = 'Exoplanet Habitability Index',
       long_description = readme(),
       classifiers = [
                       'Development Status :: 3 - Alpha',
@@ -53,11 +53,11 @@ setup(name = 'kicq',
                       'Programming Language :: Python :: 3.6',
                       'Topic :: Scientific/Engineering :: Astronomy',
                     ],
-      url = 'https://github.com/dflemin3/kicq',
+      url = 'https://github.com/dflemin3/ehi',
       author = 'David P. Fleming',
       author_email = 'dflemin3@uw.edu',
       license = 'MIT',
-      packages = ['kicq'],
+      packages = ['ehi'],
       install_requires = [
                           'numpy',
                           'matplotlib >= 3.0.0',
