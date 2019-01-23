@@ -1,0 +1,19 @@
+# The host star, Proxima Cen
+sName	        star 		                    # Body's name
+saModules	    stellar                     # Modules to apply, exact spelling required
+
+# Physical Parameters
+dAge          1.0e6                       # Initial stellar age (yr)
+dMass         0.1                         # Mass (Msun)
+dObliquity    0.0                         # Stellar obliquity
+dRotPeriod    -83.5                       # Rotation period (d)
+dRadGyra      0.5                         # Radius of gyration (moment of inertia constant)
+
+# STELLAR Parameters
+dSatXUVFrac   1.0e-3                      # Saturated XUV Luminosity Fraction
+dSatXUVTime   -0.1                        # XUV saturation time (Gyr)
+dXUVBeta      1.23                        # XUV decay power law exponent
+sStellarModel proximacen                  # Stellar evolution model used in Barnes et al. (2016)
+
+# Output
+saOutputOrder Time -Luminosity -LXUVStellar  # Output options

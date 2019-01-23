@@ -1,0 +1,29 @@
+# Planet parameters
+sName         planet                      # Body's name
+saModules     atmesc                      # Modules to apply, exact spelling required
+
+# Physical Properties
+dMass         -1.27                       # Mass [Mearth]
+dRotPeriod    -1.0                        # Rotation period, negative -> days
+dObliquity    0.0                         # Obliquity
+dRadGyra      0.5                         # Radius of gyration (moment of inertia constant)
+dOrbPeriod    -11.186                     # Orbital period
+
+# ATMESC Properties
+dXFrac                    1.0             # X-Ray/XUV absorption radius (fraction of planet radius)
+dAtmXAbsEffH2O            0.1             # Water X-ray/XUV absorption efficiency
+dAtmXAbsEffH              0.15            # Hydrogen X-ray/XUV absorption efficiency
+dSurfWaterMass         -1.0            # Initial Surface Water Mass  (Terrestrial Oceans)
+dEnvelopeMass             1.0e-3          # Initial H Envelope Mass (Earth masses)
+bHaltSurfaceDesiccated    0               # Halt when dry?
+bHaltEnvelopeGone         0               # Halt when evaporated?
+bInstantO2Sink            0               # Is oxygen absorbed instantaneously at the surface?
+dMinSurfWaterMass         -1.0e-5         # Planet is desiccated when water content drops below this (Earth oceans)
+sWaterLossModel           lbexact         # Luger & Barnes (2015) model
+sPlanetRadiusModel        proximacenb     # Proxima Cen b radius model
+
+# Orbital Properties
+dEcc          0.0                         # Eccentricity
+
+# Output options
+saOutputOrder Time -EnvelopeMass -SurfWaterMass -OxygenMass -OxygenMantleMass # Output options
