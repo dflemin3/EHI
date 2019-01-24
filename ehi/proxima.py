@@ -14,8 +14,6 @@ __all__ = ["kwargsPROXIMA", "LnPriorPROXIMA", "samplePriorPROXIMA"]
 # see here https://github.com/rodluger/proxima/blob/master/uncert/uncert.py
 
 # Stellar properties
-mProxima = 0.120                 # Anglada-Escude et al. (2016) [Msun]
-mProximaSig = 0.015              # Anglada-Escude et al. (2016) [Msun]
 lumProxima = 0.00165             # Demory et al. (2009) [Lsun]
 lumProximaSig = 0.00015          # Demory et al. (2009) [Lsun]
 logLXUVProxima = -6.36           # Ribas et al. (2016; see above)
@@ -96,7 +94,7 @@ def samplePriorPROXIMA(size=1, **kwargs):
 # Dict to hold all constraints
 kwargsPROXIMA = {"PATH" : ".",
                  "LUM" : lumProxima,
-                 "LUMSIG" : lumProxima,
+                 "LUMSIG" : lumProximaSig,
                  "LnPrior" : LnPriorPROXIMA,
                  "LOGLUMXUV" : logLXUVProxima,
                  "LOGLUMXUVSIG" : logLXUVProximaSig,
