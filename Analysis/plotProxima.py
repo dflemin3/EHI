@@ -6,6 +6,7 @@
 import numpy as np
 import corner
 import emcee
+from statsmodels.stats.proportion import proportion_confint
 import matplotlib.pyplot as plt
 
 
@@ -21,18 +22,28 @@ if np.any(~np.isfinite(tau)):
 
 burnin = int(2*np.max(tau))
 thin = int(0.5*np.min(tau))
+
+print("Burnin, thin:", burnin, thin)
+
 chain = reader.get_chain(discard=burnin, flat=True, thin=thin)
 tmp = reader.get_blobs(discard=burnin, flat=True, thin=thin)
 blobs = []
 for bl in tmp:
     blobs.append([bl[ii] for ii in range(len(bl))])
 blobs = np.array(blobs)
+ehi = np.array(blobs[:,6] > 0)
+
+# Estimate error on EHI
+ehiEst = np.mean(ehi)
+ehiErrDown, ehiErrUp = proportion_confint(np.sum(ehi), len(ehi), alpha=0.32, method="agresti_coull")
+print("EHI +/-: %e %e/%e" % (ehiEst, ehiErrUp-ehiEst, ehiEst-ehiErrDown))
+
 mask = np.array([0, 1, 2, 3, 4, 6, 7])
-samples = np.concatenate((chain, blobs[:,mask]), axis=1)
+samples = np.concatenate((chain, blobs[:,mask], ehi[:, None]), axis=1)
 ### Corner plot ###
 labels = ["Mass", "SatXUVFrac", "SatXUVTime", "Age", "XUVBeta", "dPorb",
           "dPlanetMass", "dLum", "dLogLumXUV", "dRGTime", "dWaterMass",
-          "dOxygenMass"]
+          "dOxygenMass", "EHI"]
 
 # Convert RG Time to Myr
 samples[:,9] = samples[:,9]/1.0e6

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Rup 147 (Torres+2018) MCMC run
+Proxima Centauri b MCMC run
 """
 
 import os
