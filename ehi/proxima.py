@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Data and priors for Rup 147 stellar binary with data from Torres et al. (2018)
 """
 
 import numpy as np

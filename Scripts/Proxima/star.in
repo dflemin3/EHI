@@ -4,7 +4,7 @@ saModules	    stellar                     # Modules to apply, exact spelling req
 
 # Physical Parameters
 dAge          1.0e6                       # Initial stellar age (yr)
-dMass         0.1                         # Mass (Msun)
+dMass         0.12                        # Mass (Msun)
 dObliquity    0.0                         # Stellar obliquity
 dRotPeriod    -83.5                       # Rotation period (d)
 dRadGyra      0.5                         # Radius of gyration (moment of inertia constant)

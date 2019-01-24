@@ -7,7 +7,8 @@ dMass         -1.27                       # Mass [Mearth]
 dRotPeriod    -1.0                        # Rotation period, negative -> days
 dObliquity    0.0                         # Obliquity
 dRadGyra      0.5                         # Radius of gyration (moment of inertia constant)
-dOrbPeriod    -11.186                     # Orbital period
+#dOrbPeriod    -11.186                     # Orbital period
+dSemi         1
 
 # ATMESC Properties
 dXFrac                    1.0             # X-Ray/XUV absorption radius (fraction of planet radius)

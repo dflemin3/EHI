@@ -30,32 +30,21 @@ blobs = np.array(blobs)
 mask = np.array([0, 1, 2, 3, 4, 6, 7])
 samples = np.concatenate((chain, blobs[:,mask]), axis=1)
 ### Corner plot ###
-#labels = ["Mass", "SatXUVFrac", "SatXUVTime", "Age", "XUVBeta"]
-#range = [(1.0,1.1),(1.0,1.1),(0,15),(0,15),(-2,3),(-2,3),(3,13),
-#         (0,0.6),(1.0e9,4.0e9)]
-labels = None
-range = None
+labels = ["Mass", "SatXUVFrac", "SatXUVTime", "Age", "XUVBeta", "dPorb",
+          "dPlanetMass", "dLum", "dLogLumXUV", "dRGTime", "dWaterMass",
+          "dOxygenMass"]
+
+# Convert RG Time to Myr
+samples[:,9] = samples[:,9]/1.0e6
+
+# Make luminosity units more palatable
+samples[:,7] = samples[:,7]*1.0e3
 
 # MLE solution
 
-fig = corner.corner(samples, quantiles=[0.16, 0.5, 0.84],
+fig = corner.corner(samples, quantiles=[0.16, 0.5, 0.84], labels=labels,
                     show_titles=True, title_kwargs={"fontsize": 12})
 
 fig.savefig("proximaCorner.png", bbox_inches="tight")
 
-### Chains
-
-chain = reader.get_chain(discard=burnin, flat=False, thin=thin)
-
-fig, axes = plt.subplots(nrows=9, figsize=(10,60))
-
-for ii, ax in enumerate(axes.flatten()):
-
-    ax.plot(chain[:,:, ii], "k", alpha=0.3, lw=1.5)
-    ax.set_ylabel(labels[ii])
-    ax.set_xlim(0,len(chain))
-
-axes[-1].set_xlabel("Iterations")
-
-fig.tight_layout()
-fig.savefig("proximaChains.png")
+# Done!

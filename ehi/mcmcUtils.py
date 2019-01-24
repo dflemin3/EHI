@@ -84,11 +84,11 @@ def LnLike(x, **kwargs):
     starFwFile = '%s.star.forward' % sysName
 
     # Get the planet mass (all prior)
-    dPlanetMass = -np.inf
-    while -dPlanetMass > 10:
+    dPlanetMass = np.inf
+    while dPlanetMass > 10:
         inc = np.arccos(1 - np.random.random())
         msini = proxima.mpsiniProximab + proxima.mpsiniProximabSig * np.random.randn()
-        dPlanetMass = -msini / np.sin(inc)
+        dPlanetMass = msini / np.sin(inc)
 
     # Get planet Porb (all prior)
     dPorbInit = kwargs.get("PORB") + kwargs.get("PORBSIG") * np.random.randn()
