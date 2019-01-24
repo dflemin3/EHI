@@ -52,7 +52,7 @@ def LnPriorPROXIMA(x, **kwargs):
         return -np.inf
 
     # log flat prior on saturation timescale log10[Gyr]
-    if (-dSatXUVTime < -0.3) or (-dSatXUVTime > 1.0):
+    if (dSatXUVTime < -0.3) or (dSatXUVTime > 1.0):
         return -np.inf
 
     # Large bound for age of system [Gyr]
