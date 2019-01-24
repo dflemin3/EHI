@@ -163,9 +163,9 @@ def LnLike(x, **kwargs):
 
     # Compute the likelihood using provided constraints, assuming we have
     # radius constraints for both stars
-    lnlike = ((dPorb - porb) / porbSig) ** 2
+    #lnlike = ((dPorb - porb) / porbSig) ** 2
     if lum is not None:
-        lnlike += ((dLum - lum) / lumSig) ** 2
+        lnlike = ((dLum - lum) / lumSig) ** 2
     if logLumXUV is not None:
         lnlike += ((dLogLumXUV - logLumXUV) / logLumXUVSig) ** 2
     lnlike = -0.5 * lnlike + lnprior

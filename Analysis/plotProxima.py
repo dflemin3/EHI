@@ -22,18 +22,22 @@ if np.any(~np.isfinite(tau)):
 burnin = int(2*np.max(tau))
 thin = int(0.5*np.min(tau))
 chain = reader.get_chain(discard=burnin, flat=True, thin=thin)
+blobs = reader.get_blobs(discard=burnin, flat=True, thin=thin)
+print(blobs[0], blobs.shape)
 
-print(burnin)
+samples = np.concatenate((chain, [blob for blob in blobs]), axis=1)
+
 
 ### Corner plot ###
-labels = ["Mass", "SatXUVFrac", "SatXUVTime", "Age", "XUVBeta"]
+#labels = ["Mass", "SatXUVFrac", "SatXUVTime", "Age", "XUVBeta"]
 #range = [(1.0,1.1),(1.0,1.1),(0,15),(0,15),(-2,3),(-2,3),(3,13),
 #         (0,0.6),(1.0e9,4.0e9)]
+labels = None
 range = None
 
 # MLE solution
 
-fig = corner.corner(chain, labels=labels, range=range,
+fig = corner.corner(blobs, labels=labels, range=range,
                     quantiles=[0.16, 0.5, 0.84],
                     show_titles=True, title_kwargs={"fontsize": 12})
 
