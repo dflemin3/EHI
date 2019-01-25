@@ -56,6 +56,13 @@ def LnPriorPROXIMA(x, **kwargs):
     if (dStopTime < 1.0e-3) or (dStopTime > 8):
         return -np.inf
 
+    # Hard age, beta bounds
+    if (dStopTime < 0.5) or (dStopTime > 8):
+        return -np.inf
+
+    if (dXUVBeta < -2.0) or (dXUVBeta > 0.0):
+        return -np.inf
+
     # Age prior
     lnprior = norm.logpdf(dStopTime, ageProxima, ageProximaSig)
 
