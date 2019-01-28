@@ -83,12 +83,10 @@ def LnLike(x, **kwargs):
     planetFwFile = '%s.planet.forward' % sysName
     starFwFile = '%s.star.forward' % sysName
 
-    # Get the planet mass (all prior)
-    dPlanetMass = np.inf
-    while dPlanetMass > 10:
-        inc = np.arccos(1 - np.random.random())
-        msini = proxima.mpsiniProximab + proxima.mpsiniProximabSig * np.random.randn()
-        dPlanetMass = msini / np.sin(inc)
+    # Get masses, initial eccentricities, Porbs in order from inner -> outer
+    planetMasses = [kwargs["PlanetMassSample"](name) for name in kwargs["PLANETLIST"]]
+    planetEccs = [kwargs["PlanetEccSample"](name) for name in kwargs["PLANETLIST"]]
+    planetPorbs = [kwargs["PlanetPorbSample"](name) for name in kwargs["PLANETLIST"]]
 
     # Get planet Porb (all prior)
     dPorbInit = kwargs.get("PORB") + kwargs.get("PORBSIG") * np.random.randn()

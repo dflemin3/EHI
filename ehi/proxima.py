@@ -56,10 +56,6 @@ def LnPriorPROXIMA(x, **kwargs):
     if (dStopTime < 1.0e-3) or (dStopTime > 8):
         return -np.inf
 
-    # Hard age, beta bounds
-    if (dStopTime < 0.5) or (dStopTime > 8):
-        return -np.inf
-
     if (dXUVBeta < -2.0) or (dXUVBeta > 0.0):
         return -np.inf
 
@@ -97,6 +93,82 @@ def samplePriorPROXIMA(size=1, **kwargs):
         return ret[0]
 # end function
 
+
+def ProximaPlanetPorbSample(planet, size=1, **kwargs):
+    """
+    Sample Proxima Centauri system planet Porbs from Gaussian distributions
+    based on Anglada-Escude+2016 measurements.
+    """
+
+    # Light preprocessing of planet name
+    name = str(planet).lower()
+
+    ret = []
+    for ii in range(size):
+        if name == "proximab":
+            ret.append(norm.rvs(loc=porbProximab, scale=porbProximabSig, size=1)[0])
+        else:
+            raise ValueError("Not a planet! Only proximab is allowed.")
+
+    if size > 1:
+        return ret
+    else:
+        return ret[0]
+# end function
+
+
+def ProximaPlanetMassSample(planet, size=1, **kwargs):
+    """
+    Sample Proxima Centauri system planet masses from msini distributions
+    assuming sini is uniformly distributed over [0,1] (Luger+2017) based on
+    Anglada-Escude+2016 measurements.
+    """
+
+    # Light preprocessing of planet name
+    name = str(planet).lower()
+
+    ret = []
+    for ii in range(size):
+        if name == "proximab":
+            dPlanetMass = np.inf
+            while dPlanetMass > 10:
+                inc = np.arccos(1 - np.random.random())
+                msini = mpsiniProximab + mpsiniProximabSig * np.random.randn()
+                dPlanetMass = msini / np.sin(inc)
+            ret.append(dPlanetMass)
+        else:
+            raise ValueError("Not a planet! Only proximab is allowed.")
+
+    if size > 1:
+        return ret
+    else:
+        return ret[0]
+# end function
+
+
+def ProximaPlanetEccSample(planet, size=1, **kwargs):
+    """
+    Sample Proxima Centauri system planet eccentricities based on
+    Anglada-Escude+2016 measurements.  Here, we assume circular orbits following
+    Barnes+2016.
+    """
+
+    # Light preprocessing of planet name
+    name = str(planet).lower()
+
+    ret = []
+    for ii in range(size):
+        if name == "proximab":
+            ret.append(0.0)
+        else:
+            raise ValueError("Not a planet! Only proximab is allowed.")
+
+    if size > 1:
+        return ret
+    else:
+        return ret[0]
+# end function
+
 # Dict to hold all constraints
 kwargsPROXIMA = {"PATH" : ".",
                  "LUM" : lumProxima,
@@ -106,4 +178,8 @@ kwargsPROXIMA = {"PATH" : ".",
                  "LOGLUMXUVSIG" : logLXUVProximaSig,
                  "PORB" : porbProximab,
                  "PORBSIG" : porbProximabSig,
-                 "PriorSample" : samplePriorPROXIMA}
+                 "PriorSample" : samplePriorPROXIMA,
+                 "PLANETLIST" : ["PROXIMAB"],
+                 "PlanetMassSample" : ProximaPlanetMassSample,
+                 "PlanetEccSample" : ProximaPlanetEccSample,
+                 "PlanetPorbSample" : ProximaPlanetPorbSample}

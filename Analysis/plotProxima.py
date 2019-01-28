@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 
 #filename = "../Data/proxima.h5"
-filename = "apRun1.h5"
+filename = "apRun9.h5"
 
 plotBlobs = False
 
