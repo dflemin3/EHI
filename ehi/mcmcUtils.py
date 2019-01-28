@@ -99,7 +99,6 @@ def LnLike(x, **kwargs):
         planet_in = re.sub("%s(.*?)#" % "dRadius", "%s %.6e #" % ("dRadius", -planetRadii[ii]), planet_in)
         planet_in = re.sub("%s(.*?)#" % "dEcc", "%s %.6e #" % ("dEcc", planetEccs[ii]), planet_in)
         planet_in = re.sub("%s(.*?)#" % "dOrbPeriod", "%s %.6e #" % ("dOrbPeriod", -planetPorbs[ii]), planet_in)
-
         with open(os.path.join(PATH, "output", planetFiles[ii]), 'w') as f:
             print(planet_in, file = f)
 
@@ -153,21 +152,24 @@ def LnLike(x, **kwargs):
         [np.nan for _ in kwargs["PLANETLIST"]], [np.nan for _ in kwargs["PLANETLIST"]], \
         [np.nan for _ in kwargs["PLANETLIST"]]
 
-    dtype [("dLum", np.float64), ("dLogLXUV", np.float64), ("dPorbs", list),
-           ("dPlanetMasses", list), ("dRGTimes", list), ("dEnvMasses", list),
-             ("dWaterMasses", list), ("dOxygenMasses", list)]
-
-
-
-    # Get output parameters
-    dEnvMass = float(output.log.final.planet.EnvelopeMass)
-    dWaterMass = float(output.log.final.planet.SurfWaterMass)
-    dOxygenMass = float(output.log.final.planet.OxygenMass) + float(output.log.final.planet.OxygenMantleMass)
+    # Get planet output parameters. Porb and masses are determined by priors
+    dEnvMasses = []
+    dWaterMasses = []
+    dOxygenMasses = []
+    dPorbs = []
+    dPlanetMasses = []
+    dRGTimes = []
+    for ii, pName in enumerate(kwargs["PLANETLIST"]):
+        dPlanetMasses.append(planetMasses[ii]) # Prior
+        dPorbs.append(planetPorbs[ii]) # Prior
+        dEnvMasses.append(float(output.log.final.__dict__[pName].EnvelopeMass))
+        dWaterMasses.append(float(output.log.final.__dict__[pName].SurfWaterMass))
+        dOxygenMasses.append(float(output.log.final.__dict__[pName].OxygenMass) + float(output.log.final.__dict__[pName].OxygenMantleMass))
+        dRGTimes.append(float(output.log.final.__dict__[pName].RGDuration))
 
     # Get stellar properties
     dLum = float(output.log.final.star.Luminosity)
     dLogLumXUV = np.log10(float(output.log.final.star.LXUVStellar)) # Logged!
-    dRGTime = float(output.log.final.planet.RGDuration)
 
     # Extract constraints
     # Must have luminosity, err for star
@@ -187,8 +189,13 @@ def LnLike(x, **kwargs):
         lnlike += ((dLogLumXUV - logLumXUV) / logLumXUVSig) ** 2
     lnlike = -0.5 * lnlike + lnprior
 
+    dtype [("dLum", np.float64), ("dLogLXUV", np.float64), ("dPorbs", list),
+           ("dPlanetMasses", list), ("dRGTimes", list), ("dEnvMasses", list),
+             ("dWaterMasses", list), ("dOxygenMasses", list)]
+
     # Return likelihood and blobs
-    return lnlike, dPorb, dPlanetMass, dLum, dLogLumXUV, dRGTime, dEnvMass, dWaterMass, dOxygenMass
+    return lnlike, dLum, dLogLumXUV, dPorbs, dPlanetMasses, dRGTimes, dEnvMasses, dWaterMasses, dOxygenMasses
+
 # end function
 
 
