@@ -54,11 +54,14 @@ def LnLike(x, **kwargs):
     # Get the prior probability
     lnprior = kwargs["LnPrior"](x, **kwargs)
     if np.isinf(lnprior):
-        return -np.inf, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
+        return -np.inf, np.nan, np.nan, [np.nan for _ in kwargs["PLANETLIST"]], \
+        [np.nan for _ in kwargs["PLANETLIST"]], [np.nan for _ in kwargs["PLANETLIST"]], \
+        [np.nan for _ in kwargs["PLANETLIST"]], [np.nan for _ in kwargs["PLANETLIST"]], \
+        [np.nan for _ in kwargs["PLANETLIST"]]
 
     # Get strings containing VPLanet input files (they must be provided!)
     try:
-        planet_in = kwargs.get("PLANETIN")
+        planet_ins = kwargs.get("PLANETIN")
         star_in = kwargs.get("STARIN")
         vpl_in = kwargs.get("VPLIN")
     except KeyError as err:
@@ -74,29 +77,31 @@ def LnLike(x, **kwargs):
 
     # Randomize file names
     sysName = 'vpl%012x' % random.randrange(16**12)
-    planetName = 'pl%012x' % random.randrange(16**12)
+    planetNames = ['pl%012x' % random.randrange(16**12) for _ in kwargs["PLANETLIST"]]
     starName = 'st%012x' % random.randrange(16**12)
     sysFile = sysName + '.in'
-    planetFile = planetName + '.in'
+    planetFiles = [pname + '.in' for pname in planetNames]
     starFile = starName + '.in'
     logfile = sysName + '.log'
-    planetFwFile = '%s.planet.forward' % sysName
+    planetFwFiles = ['%s.%s.forward' % (pname, sysName) for name in kwargs["PLANETLIST"]]
     starFwFile = '%s.star.forward' % sysName
 
     # Get masses, initial eccentricities, Porbs in order from inner -> outer
     planetMasses = [kwargs["PlanetMassSample"](name) for name in kwargs["PLANETLIST"]]
+    planetRadii = [kwargs["PlanetRadiusSample"](name) for name in kwargs["PLANETLIST"]]
     planetEccs = [kwargs["PlanetEccSample"](name) for name in kwargs["PLANETLIST"]]
     planetPorbs = [kwargs["PlanetPorbSample"](name) for name in kwargs["PLANETLIST"]]
 
-    # Get planet Porb (all prior)
-    dPorbInit = kwargs.get("PORB") + kwargs.get("PORBSIG") * np.random.randn()
+    # Populate the planet input files for each planet.  Note that Porbs negative
+    # to make units days in VPLanet, and same for mass/rad but for Earth units
+    for ii, planet_in in enumerate(planet_ins):
+        planet_in = re.sub("%s(.*?)#" % "dMass", "%s %.6e #" % ("dMass", -planetMasses[ii]), planet_in)
+        planet_in = re.sub("%s(.*?)#" % "dRadius", "%s %.6e #" % ("dRadius", -planetRadii[ii]), planet_in)
+        planet_in = re.sub("%s(.*?)#" % "dEcc", "%s %.6e #" % ("dEcc", planetEccs[ii]), planet_in)
+        planet_in = re.sub("%s(.*?)#" % "dOrbPeriod", "%s %.6e #" % ("dOrbPeriod", -planetPorbs[ii]), planet_in)
 
-    # Populate the planet input file (periods negative to make units Mearth in VPLanet)
-    planet_in = re.sub("%s(.*?)#" % "dMass", "%s %.6e #" % ("dMass", -dPlanetMass), planet_in)
-    planet_in = re.sub("%s(.*?)#" % "dOrbPeriod", "%s %.6e #" % ("dOrbPeriod", -dPorbInit), planet_in)
-
-    with open(os.path.join(PATH, "output", planetFile), 'w') as f:
-        print(planet_in, file = f)
+        with open(os.path.join(PATH, "output", planetFiles[ii]), 'w') as f:
+            print(planet_in, file = f)
 
     # Populate the star input file
     star_in = re.sub("%s(.*?)#" % "dMass", "%s %.6e #" % ("dMass", dMass), star_in)
@@ -107,10 +112,17 @@ def LnLike(x, **kwargs):
         print(star_in, file = f)
 
     # Populate the system input file
+
+    # Populate list of planets
+    saBodyFiles = str(starFile)
+    for pFile in planetFiles:
+        saBodyFiles += str(pFile) + " "
+    saBodyFiles = saBodyFiles.strip()
+
     vpl_in = re.sub('%s(.*?)#' % "dStopTime", '%s %.6e #' % ("dStopTime", dStopTime), vpl_in)
     vpl_in = re.sub('%s(.*?)#' % "dOutputTime", '%s %.6e #' % ("dOutputTime", dOutputTime), vpl_in)
     vpl_in = re.sub('sSystemName(.*?)#', 'sSystemName %s #' % sysName, vpl_in)
-    vpl_in = re.sub('saBodyFiles(.*?)#', 'saBodyFiles %s %s #' % (starFile, planetFile), vpl_in)
+    vpl_in = re.sub('saBodyFiles(.*?)#', 'saBodyFiles %s #' % saBodyFiles, vpl_in)
     with open(os.path.join(PATH, "output", sysFile), 'w') as f:
         print(vpl_in, file = f)
 
@@ -119,39 +131,48 @@ def LnLike(x, **kwargs):
     output = vpl.GetOutput(os.path.join(PATH, "output"), logfile = logfile)
 
     try:
-        os.remove(os.path.join(PATH, "output", planetFile))
+        for pFile in planetFiles:
+            os.remove(os.path.join(PATH, "output", pFile))
         os.remove(os.path.join(PATH, "output", starFile))
         os.remove(os.path.join(PATH, "output", sysFile))
-        os.remove(os.path.join(PATH, "output", planetFwFile))
+        for pFile in planetFwFiles:
+            os.remove(os.path.join(PATH, "output", pFile))
         os.remove(os.path.join(PATH, "output", starFwFile))
         os.remove(os.path.join(PATH, "output", logfile))
     except FileNotFoundError:
         # Run failed!
-        return -np.inf, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
+        return -np.inf, np.nan, np.nan, [np.nan for _ in kwargs["PLANETLIST"]], \
+        [np.nan for _ in kwargs["PLANETLIST"]], [np.nan for _ in kwargs["PLANETLIST"]], \
+        [np.nan for _ in kwargs["PLANETLIST"]], [np.nan for _ in kwargs["PLANETLIST"]], \
+        [np.nan for _ in kwargs["PLANETLIST"]]
 
     # Ensure we ran for as long as we set out to
     if not output.log.final.system.Age / utils.YEARSEC >= dStopTime:
-        return -np.inf, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
+        return -np.inf, np.nan, np.nan, [np.nan for _ in kwargs["PLANETLIST"]], \
+        [np.nan for _ in kwargs["PLANETLIST"]], [np.nan for _ in kwargs["PLANETLIST"]], \
+        [np.nan for _ in kwargs["PLANETLIST"]], [np.nan for _ in kwargs["PLANETLIST"]], \
+        [np.nan for _ in kwargs["PLANETLIST"]]
+
+    dtype [("dLum", np.float64), ("dLogLXUV", np.float64), ("dPorbs", list),
+           ("dPlanetMasses", list), ("dRGTimes", list), ("dEnvMasses", list),
+             ("dWaterMasses", list), ("dOxygenMasses", list)]
+
+
 
     # Get output parameters
-    dPorb = dPorbInit # XXX hack since we don't evolve this quantity
     dEnvMass = float(output.log.final.planet.EnvelopeMass)
     dWaterMass = float(output.log.final.planet.SurfWaterMass)
     dOxygenMass = float(output.log.final.planet.OxygenMass) + float(output.log.final.planet.OxygenMantleMass)
+
+    # Get stellar properties
     dLum = float(output.log.final.star.Luminosity)
     dLogLumXUV = np.log10(float(output.log.final.star.LXUVStellar)) # Logged!
     dRGTime = float(output.log.final.planet.RGDuration)
 
     # Extract constraints
-    # Must have orbital period, error, for planet
-    porb = kwargs.get("PORB")
-    porbSig = kwargs.get("PORBSIG")
-    try:
-        lum = kwargs.get("LUM")
-        lumSig = kwargs.get("LUMSIG")
-    except KeyError:
-        lum = None
-        lumSig = None
+    # Must have luminosity, err for star
+    lum = kwargs.get("LUM")
+    lumSig = kwargs.get("LUMSIG")
     try:
         logLumXUV = kwargs.get("LOGLUMXUV")
         logLumXUVSig = kwargs.get("LOGLUMXUVSIG")
@@ -160,10 +181,8 @@ def LnLike(x, **kwargs):
         logLumXUVSig = None
 
     # Compute the likelihood using provided constraints, assuming we have
-    # radius constraints for both stars
-    lnlike = ((dPorb - porb) / porbSig) ** 2
-    if lum is not None:
-        lnlike += ((dLum - lum) / lumSig) ** 2
+    # luminosity constraints for host star
+    lnlike = ((dLum - lum) / lumSig) ** 2
     if logLumXUV is not None:
         lnlike += ((dLogLumXUV - logLumXUV) / logLumXUVSig) ** 2
     lnlike = -0.5 * lnlike + lnprior
@@ -192,7 +211,7 @@ def GetEvol(x, **kwargs):
 
     # Get strings containing VPLanet input files (they must be provided!)
     try:
-        planet_in = kwargs.get("PLANETIN")
+        planet_ins = kwargs.get("PLANETIN")
         star_in = kwargs.get("STARIN")
         vpl_in = kwargs.get("VPLIN")
     except KeyError as err:
@@ -208,31 +227,30 @@ def GetEvol(x, **kwargs):
 
     # Randomize file names
     sysName = 'vpl%012x' % random.randrange(16**12)
-    planetName = 'pri%012x' % random.randrange(16**12)
-    starName = 'sec%012x' % random.randrange(16**12)
+    planetNames = ['pl%012x' % random.randrange(16**12) for _ in kwargs["PLANETLIST"]]
+    starName = 'st%012x' % random.randrange(16**12)
     sysFile = sysName + '.in'
-    planetFile = planetName + '.in'
+    planetFiles = [planetName + '.in' for planetName in planetNames]
     starFile = starName + '.in'
     logfile = sysName + '.log'
-    planetFwFile = '%s.planet.forward' % sysName
+    planetFwFiles = ['%s.%s.forward' % (sysName, planetName) for planetName in planetNames]
     starFwFile = '%s.star.forward' % sysName
 
-    # Get the planet mass (all prior)
-    dPlanetMass = -np.inf
-    while -dPlanetMass > 10:
-        inc = np.arccos(1 - np.random.random())
-        msini = Mpsini + sigMpsini * np.random.randn()
-        dPlanetMass = -msini / np.sin(inc)
+    # Sample masses, radii, ecc, porbs for each planet in the system
+    planetMasses = [kwargs["PlanetMassSample"](name) for name in kwargs["PLANETLIST"]]
+    planetRadii = [kwargs["PlanetRadiusSample"](name) for name in kwargs["PLANETLIST"]]
+    planetEccs = [kwargs["PlanetEccSample"](name) for name in kwargs["PLANETLIST"]]
+    planetPorbs = [kwargs["PlanetPorbSample"](name) for name in kwargs["PLANETLIST"]]
 
-    # Get planet Porb (all prior)
-    dPorbInit = kwargs.get("PORB") + kwargs.get("PORBSIG") * np.random.randn()
-
-    # Populate the planet input file (periods negative to make units Mearth in VPLanet)
-    planet_in = re.sub("%s(.*?)#" % "dMass", "%s %.6e #" % ("dMass", -dPlanetMass), planet_in)
-    planet_in = re.sub("%s(.*?)#" % "dOrbPeriod", "%s %.6e #" % ("dOrbPeriod", -dPorbInit), planet_in)
-
-    with open(os.path.join(PATH, "output", planetFile), 'w') as f:
-        print(planet_in, file = f)
+    # Write input file for each planet
+    for ii, planet_in in enumerate(planet_ins):
+        # Populate the planet input file (periods negative to make units Mearth in VPLanet)
+        planet_in = re.sub("%s(.*?)#" % "dMass", "%s %.6e #" % ("dMass", -planetMasses[ii]), planet_in)
+        planet_in = re.sub("%s(.*?)#" % "dRadius", "%s %.6e #" % ("dRadius", -planetRadii[ii]), planet_in)
+        planet_in = re.sub("%s(.*?)#" % "dEcc", "%s %.6e #" % ("dEcc", planetEccs[ii]), planet_in)
+        planet_in = re.sub("%s(.*?)#" % "dOrbPeriod", "%s %.6e #" % ("dOrbPeriod", -planetPorbs[ii]), planet_in)
+        with open(os.path.join(PATH, "output", planetFiles[ii]), 'w') as f:
+            print(planet_in, file = f)
 
     # Populate the star input file
     star_in = re.sub("%s(.*?)#" % "dMass", "%s %.6e #" % ("dMass", dMass), star_in)
@@ -242,11 +260,17 @@ def GetEvol(x, **kwargs):
     with open(os.path.join(PATH, "output", starFile), 'w') as f:
         print(star_in, file = f)
 
+    # Make list of body files
+    saBodyFiles = "star.in "
+    for pFile in planetFiles:
+        saBodyFiles += str(pFile) + " "
+    saBodyFiles = saBodyFiles.strip()
+
     # Populate the system input file
     vpl_in = re.sub('%s(.*?)#' % "dStopTime", '%s %.6e #' % ("dStopTime", dStopTime), vpl_in)
     vpl_in = re.sub('%s(.*?)#' % "dOutputTime", '%s %.6e #' % ("dOutputTime", dOutputTime), vpl_in)
     vpl_in = re.sub('sSystemName(.*?)#', 'sSystemName %s #' % sysName, vpl_in)
-    vpl_in = re.sub('saBodyFiles(.*?)#', 'saBodyFiles %s %s #' % (starFile, planetFile), vpl_in)
+    vpl_in = re.sub('saBodyFiles(.*?)#', 'saBodyFiles %s #' % saBodyFiles, vpl_in)
     with open(os.path.join(PATH, "output", sysFile), 'w') as f:
         print(vpl_in, file = f)
 
@@ -255,10 +279,12 @@ def GetEvol(x, **kwargs):
     output = vpl.GetOutput(os.path.join(PATH, "output"), logfile = logfile)
 
     try:
-        os.remove(os.path.join(PATH, "output", planetFile))
+        for pFile in planetFiles:
+            os.remove(os.path.join(PATH, "output", pFile))
         os.remove(os.path.join(PATH, "output", starFile))
         os.remove(os.path.join(PATH, "output", sysFile))
-        os.remove(os.path.join(PATH, "output", planetFwFile))
+        for pFile in planetFwFiles:
+            os.remove(os.path.join(PATH, "output", pFile))
         os.remove(os.path.join(PATH, "output", starFwFile))
         os.remove(os.path.join(PATH, "output", logfile))
     except FileNotFoundError:
@@ -275,7 +301,7 @@ def GetEvol(x, **kwargs):
 
 
 def RunMCMC(x0=None, ndim=5, nwalk=100, nsteps=5000, pool=None, backend=None,
-            restart=False, **kwargs):
+            restart=False, planetList=["planet.in"], **kwargs):
     """
     """
 
@@ -297,9 +323,11 @@ def RunMCMC(x0=None, ndim=5, nwalk=100, nsteps=5000, pool=None, backend=None,
     print("Running MCMC...")
 
     # Get the input files, save them as strings
-    with open(os.path.join(PATH, "planet.in"), 'r') as f:
-        planet_in = f.read()
-        kwargs["PLANETIN"] = planet_in
+    planet_ins = []
+    for planet in planetList:
+        with open(os.path.join(PATH, planet), 'r') as f:
+            planet_ins.append(f.read())
+        kwargs["PLANETIN"] = planet_ins
     with open(os.path.join(PATH, "star.in"), 'r') as f:
         star_in = f.read()
         kwargs["STARIN"] = star_in
@@ -325,13 +353,14 @@ def RunMCMC(x0=None, ndim=5, nwalk=100, nsteps=5000, pool=None, backend=None,
     ### Run MCMC ###
 
     # Define blobs, blob data types
-    dtype = [("dPorb", np.float64), ("dPlanetMass", np.float64), ("dLum", np.float64),
-             ("dLogLXUV", np.float64), ("dRGTime", np.float64), ("dEnvMass", np.float64),
-             ("dWaterMass", np.float64), ("dOxygenMass", np.float64)]
+    dtype [("dLum", np.float64), ("dLogLXUV", np.float64), ("dPorbs", list),
+           ("dPlanetMasses", list), ("dRGTimes", list), ("dEnvMasses", list),
+             ("dWaterMasses", list), ("dOxygenMasses", list)]
 
     # Initialize the sampler object
-    sampler = emcee.EnsembleSampler(nwalk, ndim, LnLike, kwargs=kwargs, pool=pool,
-                                    blobs_dtype=dtype, backend=handler)
+    sampler = emcee.EnsembleSampler(nwalk, ndim, LnLike, kwargs=kwargs,
+                                    pool=pool, blobs_dtype=dtype,
+                                    backend=handler)
 
     # Actually run the MCMC
     if restart:

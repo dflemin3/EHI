@@ -1,5 +1,5 @@
 # Trappist d
-sName		d	        # Body's name
+sName		trappist1d	# Body's name
 saModules 	atmesc          # Active modules
 
 # Physical Parameters
