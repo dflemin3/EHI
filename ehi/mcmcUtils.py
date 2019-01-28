@@ -54,10 +54,8 @@ def LnLike(x, **kwargs):
     # Get the prior probability
     lnprior = kwargs["LnPrior"](x, **kwargs)
     if np.isinf(lnprior):
-        return -np.inf, np.nan, np.nan, [np.nan for _ in kwargs["PLANETLIST"]], \
-        [np.nan for _ in kwargs["PLANETLIST"]], [np.nan for _ in kwargs["PLANETLIST"]], \
-        [np.nan for _ in kwargs["PLANETLIST"]], [np.nan for _ in kwargs["PLANETLIST"]], \
-        [np.nan for _ in kwargs["PLANETLIST"]]
+        blobs = [np.nan, np.nan] + 6*[np.nan for _ in kwargs["PLANETLIST"]]
+        return -np.inf, blobs
 
     # Get strings containing VPLanet input files (they must be provided!)
     try:
@@ -83,7 +81,7 @@ def LnLike(x, **kwargs):
     planetFiles = [pname + '.in' for pname in planetNames]
     starFile = starName + '.in'
     logfile = sysName + '.log'
-    planetFwFiles = ['%s.%s.forward' % (name, sysName) for name in kwargs["PLANETLIST"]]
+    planetFwFiles = ['%s.%s.forward' % (sysName, name) for name in kwargs["PLANETLIST"]]
     starFwFile = '%s.star.forward' % sysName
 
     # Get masses, initial eccentricities, Porbs in order from inner -> outer
@@ -140,17 +138,14 @@ def LnLike(x, **kwargs):
         os.remove(os.path.join(PATH, "output", logfile))
     except FileNotFoundError:
         # Run failed!
-        return -np.inf, np.nan, np.nan, [np.nan for _ in kwargs["PLANETLIST"]], \
-        [np.nan for _ in kwargs["PLANETLIST"]], [np.nan for _ in kwargs["PLANETLIST"]], \
-        [np.nan for _ in kwargs["PLANETLIST"]], [np.nan for _ in kwargs["PLANETLIST"]], \
-        [np.nan for _ in kwargs["PLANETLIST"]]
+        blobs = [np.nan, np.nan] + 6*[np.nan for _ in kwargs["PLANETLIST"]]
+        print("2", -np.inf, blobs)
+        return -np.inf, blobs
 
     # Ensure we ran for as long as we set out to
     if not output.log.final.system.Age / utils.YEARSEC >= dStopTime:
-        return -np.inf, np.nan, np.nan, [np.nan for _ in kwargs["PLANETLIST"]], \
-        [np.nan for _ in kwargs["PLANETLIST"]], [np.nan for _ in kwargs["PLANETLIST"]], \
-        [np.nan for _ in kwargs["PLANETLIST"]], [np.nan for _ in kwargs["PLANETLIST"]], \
-        [np.nan for _ in kwargs["PLANETLIST"]]
+        blobs = [np.nan, np.nan] + 6*[np.nan for _ in kwargs["PLANETLIST"]]
+        return -np.inf, blobs
 
     # Get planet output parameters. Porb and masses are determined by priors
     dEnvMasses = []
@@ -190,7 +185,8 @@ def LnLike(x, **kwargs):
     lnlike = -0.5 * lnlike + lnprior
 
     # Return likelihood and blobs
-    return lnlike, dLum, dLogLumXUV, dPorbs, dPlanetMasses, dRGTimes, dEnvMasses, dWaterMasses, dOxygenMasses
+    blobs = [dLum, dLogLumXUV] + dPorbs + dPlanetMasses + dRGTimes + dEnvMasses + dWaterMasses + dOxygenMasses
+    return lnlike, blobs
 
 # end function
 
@@ -366,6 +362,7 @@ def RunMCMC(x0=None, ndim=5, nwalk=100, nsteps=5000, pool=None, backend=None,
     dtypeOxy = []
     dtype
     for name in kwargs["PLANETLIST"]:
+        name = str(name).lower()
         dtypeEnv.append(("dEnvMass_%s" % name, np.float64))
         dtypePorb.append(("dPorb_%s" % name, np.float64))
         dtypeMass.append(("dPlanetMass_%s" % name, np.float64))
