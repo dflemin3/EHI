@@ -83,7 +83,7 @@ def LnLike(x, **kwargs):
     planetFiles = [pname + '.in' for pname in planetNames]
     starFile = starName + '.in'
     logfile = sysName + '.log'
-    planetFwFiles = ['%s.%s.forward' % (pname, sysName) for name in kwargs["PLANETLIST"]]
+    planetFwFiles = ['%s.%s.forward' % (name, sysName) for name in kwargs["PLANETLIST"]]
     starFwFile = '%s.star.forward' % sysName
 
     # Get masses, initial eccentricities, Porbs in order from inner -> outer
@@ -113,7 +113,7 @@ def LnLike(x, **kwargs):
     # Populate the system input file
 
     # Populate list of planets
-    saBodyFiles = str(starFile)
+    saBodyFiles = str(starFile) + " "
     for pFile in planetFiles:
         saBodyFiles += str(pFile) + " "
     saBodyFiles = saBodyFiles.strip()
@@ -189,10 +189,6 @@ def LnLike(x, **kwargs):
         lnlike += ((dLogLumXUV - logLumXUV) / logLumXUVSig) ** 2
     lnlike = -0.5 * lnlike + lnprior
 
-    dtype [("dLum", np.float64), ("dLogLXUV", np.float64), ("dPorbs", list),
-           ("dPlanetMasses", list), ("dRGTimes", list), ("dEnvMasses", list),
-             ("dWaterMasses", list), ("dOxygenMasses", list)]
-
     # Return likelihood and blobs
     return lnlike, dLum, dLogLumXUV, dPorbs, dPlanetMasses, dRGTimes, dEnvMasses, dWaterMasses, dOxygenMasses
 
@@ -237,21 +233,21 @@ def GetEvol(x, **kwargs):
     planetNames = ['pl%012x' % random.randrange(16**12) for _ in kwargs["PLANETLIST"]]
     starName = 'st%012x' % random.randrange(16**12)
     sysFile = sysName + '.in'
-    planetFiles = [planetName + '.in' for planetName in planetNames]
+    planetFiles = [pname + '.in' for pname in planetNames]
     starFile = starName + '.in'
     logfile = sysName + '.log'
-    planetFwFiles = ['%s.%s.forward' % (sysName, planetName) for planetName in planetNames]
+    planetFwFiles = ['%s.%s.forward' % (pname, sysName) for name in kwargs["PLANETLIST"]]
     starFwFile = '%s.star.forward' % sysName
 
-    # Sample masses, radii, ecc, porbs for each planet in the system
+    # Get masses, initial eccentricities, Porbs in order from inner -> outer
     planetMasses = [kwargs["PlanetMassSample"](name) for name in kwargs["PLANETLIST"]]
     planetRadii = [kwargs["PlanetRadiusSample"](name) for name in kwargs["PLANETLIST"]]
     planetEccs = [kwargs["PlanetEccSample"](name) for name in kwargs["PLANETLIST"]]
     planetPorbs = [kwargs["PlanetPorbSample"](name) for name in kwargs["PLANETLIST"]]
 
-    # Write input file for each planet
+    # Populate the planet input files for each planet.  Note that Porbs negative
+    # to make units days in VPLanet, and same for mass/rad but for Earth units
     for ii, planet_in in enumerate(planet_ins):
-        # Populate the planet input file (periods negative to make units Mearth in VPLanet)
         planet_in = re.sub("%s(.*?)#" % "dMass", "%s %.6e #" % ("dMass", -planetMasses[ii]), planet_in)
         planet_in = re.sub("%s(.*?)#" % "dRadius", "%s %.6e #" % ("dRadius", -planetRadii[ii]), planet_in)
         planet_in = re.sub("%s(.*?)#" % "dEcc", "%s %.6e #" % ("dEcc", planetEccs[ii]), planet_in)
@@ -267,13 +263,14 @@ def GetEvol(x, **kwargs):
     with open(os.path.join(PATH, "output", starFile), 'w') as f:
         print(star_in, file = f)
 
-    # Make list of body files
-    saBodyFiles = "star.in "
+    # Populate the system input file
+
+    # Populate list of planets
+    saBodyFiles = str(starFile)
     for pFile in planetFiles:
         saBodyFiles += str(pFile) + " "
     saBodyFiles = saBodyFiles.strip()
 
-    # Populate the system input file
     vpl_in = re.sub('%s(.*?)#' % "dStopTime", '%s %.6e #' % ("dStopTime", dStopTime), vpl_in)
     vpl_in = re.sub('%s(.*?)#' % "dOutputTime", '%s %.6e #' % ("dOutputTime", dOutputTime), vpl_in)
     vpl_in = re.sub('sSystemName(.*?)#', 'sSystemName %s #' % sysName, vpl_in)
@@ -360,9 +357,22 @@ def RunMCMC(x0=None, ndim=5, nwalk=100, nsteps=5000, pool=None, backend=None,
     ### Run MCMC ###
 
     # Define blobs, blob data types
-    dtype [("dLum", np.float64), ("dLogLXUV", np.float64), ("dPorbs", list),
-           ("dPlanetMasses", list), ("dRGTimes", list), ("dEnvMasses", list),
-             ("dWaterMasses", list), ("dOxygenMasses", list)]
+    dtype = [("dLum", np.float64), ("dLogLXUV", np.float64)]
+    dtypeEnv = []
+    dtypeMass = []
+    dtypePorb = []
+    dtypeRG = []
+    dtypeWater = []
+    dtypeOxy = []
+    dtype
+    for name in kwargs["PLANETLIST"]:
+        dtypeEnv.append(("dEnvMass_%s" % name, np.float64))
+        dtypePorb.append(("dPorb_%s" % name, np.float64))
+        dtypeMass.append(("dPlanetMass_%s" % name, np.float64))
+        dtypeRG.append(("dRGTime_%s" % name, np.float64))
+        dtypeWater.append(("dWaterMass_%s" % name, np.float64))
+        dtypeOxy.append(("dOxygenMass_%s" % name, np.float64))
+    dtype += dtypePorb + dtypeMass + dtypeRG + dtypeEnv + dtypeWater + dtypeOxy
 
     # Initialize the sampler object
     sampler = emcee.EnsembleSampler(nwalk, ndim, LnLike, kwargs=kwargs,

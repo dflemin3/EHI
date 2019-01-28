@@ -20,6 +20,6 @@ dEta          0.1                          # Coefficient for variable timesteppi
 
 # Parameters we'll vary
 sSystemName  proxima                        # System name
-saBodyFiles  star.in planet.in              # Body names
+saBodyFiles  star.in proximab.in            # Body names
 dStopTime    5.0e9                          # Total simulation time (yr)
 dOutputTime  1.0e6                          # Output cadence (yr)

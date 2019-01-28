@@ -1,5 +1,5 @@
 # Planet parameters
-sName         planet                      # Body's name
+sName         proximab                    # Body's name
 saModules     atmesc                      # Modules to apply, exact spelling required
 
 # Physical Properties

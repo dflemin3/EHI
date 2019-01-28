@@ -15,6 +15,7 @@ nsteps = 10
 nsamples = 0
 restart = False
 backend = "proxima.h5"
+planetList = ["proximab.in"]
 
 # Open a pool, and let it rip!
 with pool.Pool(pool='SerialPool') as pool:
@@ -31,6 +32,7 @@ with pool.Pool(pool='SerialPool') as pool:
     PATH = os.path.dirname(os.path.abspath(__file__))
     kwargs["PATH"] = PATH
     kwargs["backend"] = backend
+    kwargs["planetList"] = planetList
 
     # Check for output dir, make it if it doesn't already exist
     if not os.path.exists(os.path.join(PATH, "output")):

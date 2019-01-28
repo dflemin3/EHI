@@ -169,6 +169,28 @@ def ProximaPlanetEccSample(planet, size=1, **kwargs):
         return ret[0]
 # end function
 
+
+def ProximaPlanetRadiusSample(planet, size=1, **kwargs):
+    """
+    Sample Proxima Centauri system planet radii based on Barnes+2016 guess.
+    """
+
+    # Light preprocessing of planet name
+    name = str(planet).lower()
+
+    ret = []
+    for ii in range(size):
+        if name == "proximab":
+            ret.append(1.07)
+        else:
+            raise ValueError("Not a planet! Only proximab is allowed.")
+
+    if size > 1:
+        return ret
+    else:
+        return ret[0]
+# end function
+
 # Dict to hold all constraints
 kwargsPROXIMA = {"PATH" : ".",
                  "LUM" : lumProxima,
@@ -182,4 +204,5 @@ kwargsPROXIMA = {"PATH" : ".",
                  "PLANETLIST" : ["PROXIMAB"],
                  "PlanetMassSample" : ProximaPlanetMassSample,
                  "PlanetEccSample" : ProximaPlanetEccSample,
-                 "PlanetPorbSample" : ProximaPlanetPorbSample}
+                 "PlanetPorbSample" : ProximaPlanetPorbSample,
+                 "PlanetRadiusSample" : ProximaPlanetRadiusSample}
