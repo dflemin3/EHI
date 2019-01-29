@@ -14,7 +14,7 @@ nwalk = 40
 nsteps = 10
 nsamples = 0
 restart = False
-backend = "proxima.h5"
+npzCache = "proxima.npz"
 planetList = ["proximab.in"]
 
 # Open a pool, and let it rip!
@@ -31,7 +31,7 @@ with pool.Pool(pool='SerialPool') as pool:
     kwargs["PriorSample"] = proxima.samplePriorPROXIMA
     PATH = os.path.dirname(os.path.abspath(__file__))
     kwargs["PATH"] = PATH
-    kwargs["backend"] = backend
+    kwargs["npzCache"] = npzCache
     kwargs["planetList"] = planetList
 
     # Check for output dir, make it if it doesn't already exist

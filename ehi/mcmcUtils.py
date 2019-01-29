@@ -301,7 +301,7 @@ def GetEvol(x, **kwargs):
 
 
 def RunMCMC(x0=None, ndim=5, nwalk=100, nsteps=5000, pool=None, backend=None,
-            restart=False, planetList=["planet.in"], **kwargs):
+            restart=False, planetList=["planet.in"], npzCache=None, **kwargs):
     """
     """
 
@@ -344,6 +344,9 @@ def RunMCMC(x0=None, ndim=5, nwalk=100, nsteps=5000, pool=None, backend=None,
         if not restart:
             handler.reset(nwalk, ndim)
 
+    else:
+        handler = None
+
     # Populate initial conditions for walkers using random samples over prior
     if not restart:
         # If MCMC isn't initialized, just sample from the prior
@@ -362,6 +365,21 @@ def RunMCMC(x0=None, ndim=5, nwalk=100, nsteps=5000, pool=None, backend=None,
     else:
         for ii, result in enumerate(sampler.sample(x0, iterations=nsteps)):
             print("MCMC: %d/%d..." % (ii + 1, nsteps))
+
+    # Cache results into a npz?
+    if npzCache is not None:
+        # Estimate burnin, thin timescales
+        tau = 2#sampler.get_autocorr_time()
+        burnin = int(2*np.max(tau))
+        thin = int(0.5*np.min(tau))
+
+        # Access samples, blobs
+        chain = sampler.get_chain(discard=burnin, flat=True, thin=thin)
+        blobs = sampler.get_blobs(discard=burnin, flat=True, thin=thin)
+
+        # Now save it all!
+        np.savez(npzCache, tau=tau, burnin=burnin, thin=thin, chain=chain,
+                 blobs=blobs)
 
     print("Done!")
 # end function

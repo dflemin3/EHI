@@ -10,10 +10,10 @@ from statsmodels.stats.proportion import proportion_confint
 import matplotlib.pyplot as plt
 
 
-#filename = "../Data/proxima.h5"
-filename = "apRun9.h5"
+filename = "../Data/proxima.h5"
+#filename = "apRun9.h5"
 
-plotBlobs = False
+plotBlobs = True
 
 # Open file
 reader = emcee.backends.HDFBackend(filename)
@@ -43,17 +43,17 @@ if plotBlobs:
     print("EHI +/-: %e %e/%e" % (ehiEst, ehiErrUp-ehiEst, ehiEst-ehiErrDown))
 
     mask = np.array([0, 1, 2, 3, 4, 6, 7])
-    samples = np.concatenate((chain, blobs[:,mask], ehi[:, None]), axis=1)
+    samples = np.concatenate((chain, blobs[:,mask]), axis=1)
 
-    labels = ["Mass", "SatXUVFrac", "SatXUVTime", "Age", "XUVBeta", "dPorb",
-              "dPlanetMass", "dLum", "dLogLumXUV", "dRGTime", "dWaterMass",
-              "dOxygenMass", "EHI"]
+    labels = ["Mass", "SatXUVFrac", "SatXUVTime", "Age", "XUVBeta", "Lum",
+              "logLumXUV", "Porb", "Mass", "dRGTime", "WaterMass",
+              "OxygenMass"]
 
     # Convert RG Time to Myr
     samples[:,9] = samples[:,9]/1.0e6
 
     # Make luminosity units more palatable
-    samples[:,7] = samples[:,7]*1.0e3
+    samples[:,5] = samples[:,5]*1.0e3
 else:
     samples = chain
     labels = ["Mass", "SatXUVFrac", "SatXUVTime", "Age", "XUVBeta"]
@@ -64,6 +64,6 @@ else:
 fig = corner.corner(samples, quantiles=[0.16, 0.5, 0.84], labels=labels,
                     show_titles=True, title_kwargs={"fontsize": 12})
 
-fig.savefig("proximaAPCorner.png", bbox_inches="tight")
+fig.savefig("proximaCorner.png", bbox_inches="tight")
 
 # Done!
