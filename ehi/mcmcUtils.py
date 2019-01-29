@@ -154,12 +154,13 @@ def LnLike(x, **kwargs):
     dPlanetMasses = []
     dRGTimes = []
     for ii, pName in enumerate(kwargs["PLANETLIST"]):
+        name = str(pName).lower()
         dPlanetMasses.append(planetMasses[ii]) # Prior
         dPorbs.append(planetPorbs[ii]) # Prior
-        dEnvMasses.append(float(output.log.final.__dict__[pName].EnvelopeMass))
-        dWaterMasses.append(float(output.log.final.__dict__[pName].SurfWaterMass))
-        dOxygenMasses.append(float(output.log.final.__dict__[pName].OxygenMass) + float(output.log.final.__dict__[pName].OxygenMantleMass))
-        dRGTimes.append(float(output.log.final.__dict__[pName].RGDuration))
+        dEnvMasses.append(float(output.log.final.__dict__[name].EnvelopeMass))
+        dWaterMasses.append(float(output.log.final.__dict__[name].SurfWaterMass))
+        dOxygenMasses.append(float(output.log.final.__dict__[name].OxygenMass) + float(output.log.final.__dict__[name].OxygenMantleMass))
+        dRGTimes.append(float(output.log.final.__dict__[name].RGDuration))
 
     # Get stellar properties
     dLum = float(output.log.final.star.Luminosity)

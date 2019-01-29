@@ -32,7 +32,7 @@ porbTrappist1b = 1.51087081
 porbTrappist1bSig = 0.6e-6
 
 eccTrappist1b = 0.00622
-eccTrappist1b = 0.00304
+eccTrappist1bSig = 0.00304
 
 massTrappist1b = 1.017
 massTrappist1bSig = 0.154
@@ -45,7 +45,7 @@ porbTrappist1c = 2.4218233
 porbTrappist1cSig = 0.17e-5
 
 eccTrappist1c = 0.00654
-eccTrappist1c = 0.00188
+eccTrappist1cSig = 0.00188
 
 massTrappist1c = 1.156
 massTrappist1cSig = 0.142
@@ -58,7 +58,7 @@ porbTrappist1d = 4.049610
 porbTrappist1dSig = 0.63e-4
 
 eccTrappist1d = 0.00837
-eccTrappist1d = 0.00093
+eccTrappist1dSig = 0.00093
 
 massTrappist1d = 0.297
 massTrappist1dSig = 0.039
@@ -71,7 +71,7 @@ porbTrappist1e = 6.099615
 porbTrappist1eSig = 0.11e-4
 
 eccTrappist1e = 0.00510
-eccTrappist1e = 0.00058
+eccTrappist1eSig = 0.00058
 
 massTrappist1e = 0.772
 massTrappist1eSig = 0.079
@@ -84,7 +84,7 @@ porbTrappist1f = 9.20669
 porbTrappist1fSig = 0.15e-4
 
 eccTrappist1f = 0.01007
-eccTrappist1f = 0.00068
+eccTrappist1fSig = 0.00068
 
 massTrappist1f = 0.934
 massTrappist1fSig = 0.08
@@ -97,7 +97,7 @@ porbTrappist1g = 12.35294
 porbTrappist1gSig = 0.12e-3
 
 eccTrappist1g = 0.00208
-eccTrappist1g = 0.00058
+eccTrappist1gSig = 0.00058
 
 massTrappist1g = 1.148
 massTrappist1gSig = 0.098
@@ -110,7 +110,7 @@ porbTrappist1h = 18.767
 porbTrappist1hSig = 0.004
 
 eccTrappist1h = 0.00567
-eccTrappist1h = 0.00121
+eccTrappist1hSig = 0.00121
 
 massTrappist1h = 0.331
 massTrappist1hSig = 0.056
@@ -300,22 +300,30 @@ def Trappist1PlanetEccSample(planet, size=1, **kwargs):
 
     ret = []
     for ii in range(size):
-        if name == "trappist1b":
-            ret.append(norm.rvs(loc=eccTrappist1b, scale=eccTrappist1bSig, size=1)[0])
-        elif name == "trappist1c":
-            ret.append(norm.rvs(loc=eccTrappist1c, scale=eccTrappist1cSig, size=1)[0])
-        elif name == "trappist1d":
-            ret.append(norm.rvs(loc=eccTrappist1d, scale=eccTrappist1dSig, size=1)[0])
-        elif name == "trappist1e":
-            ret.append(norm.rvs(loc=eccTrappist1e, scale=eccTrappist1eSig, size=1)[0])
-        elif name == "trappist1f":
-            ret.append(norm.rvs(loc=eccTrappist1f, scale=eccTrappist1fSig, size=1)[0])
-        elif name == "trappist1g":
-            ret.append(norm.rvs(loc=eccTrappist1g, scale=eccTrappist1gSig, size=1)[0])
-        elif name == "trappist1h":
-            ret.append(norm.rvs(loc=eccTrappist1h, scale=eccTrappist1hSig, size=1)[0])
-        else:
-            raise ValueError("Not a planet! Try trappist1x for x in [b-h]")
+        while True:
+            if name == "trappist1b":
+                tmp = norm.rvs(loc=eccTrappist1b, scale=eccTrappist1bSig, size=1)[0]
+            elif name == "trappist1c":
+                tmp = norm.rvs(loc=eccTrappist1c, scale=eccTrappist1cSig, size=1)[0]
+            elif name == "trappist1d":
+                tmp = norm.rvs(loc=eccTrappist1d, scale=eccTrappist1dSig, size=1)[0]
+            elif name == "trappist1e":
+                tmp = norm.rvs(loc=eccTrappist1e, scale=eccTrappist1eSig, size=1)[0]
+            elif name == "trappist1f":
+                tmp = norm.rvs(loc=eccTrappist1f, scale=eccTrappist1fSig, size=1)[0]
+            elif name == "trappist1g":
+                tmp = norm.rvs(loc=eccTrappist1g, scale=eccTrappist1gSig, size=1)[0]
+            elif name == "trappist1h":
+                tmp = norm.rvs(loc=eccTrappist1h, scale=eccTrappist1hSig, size=1)[0]
+            else:
+                raise ValueError("Not a planet! Try trappist1x for x in [b-h]")
+
+            # Make sure it's a physically possible eccentricity
+            if tmp >= 0 and tmp < 1:
+                break
+
+        # Save valid guess
+        ret.append(tmp)
 
     if size > 1:
         return ret
@@ -332,9 +340,9 @@ kwargsTRAPPIST1 = {"PATH" : ".",
                    "LUMSIG" : lumTrappist1Sig,
                    "LOGLUMXUV" : logLXUVTrappist1,
                    "LOGLUMXUVSIG" : logLXUVTrappist1Sig,
-                   "PLANETLIST" : ["TRAPPIST1B", "TRAPPIST1C", "TRAPPIST1D",
-                                   "TRAPPIST1E", "TRAPPIST1F", "TRAPPIST1G",
-                                   "TRAPPIST1H"],
+                   "PLANETLIST" : ["trappist1b", "trappist1c", "trappist1d",
+                                   "trappist1e", "trappist1f", "trappist1g",
+                                   "trappist1h"],
                    "PlanetMassSample" : Trappist1PlanetMassSample,
                    "PlanetEccSample" : Trappist1PlanetEccSample,
                    "PlanetRadiusSample" : Trappist1PlanetRadiusSample,
