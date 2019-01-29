@@ -54,7 +54,7 @@ def LnLike(x, **kwargs):
     # Get the prior probability
     lnprior = kwargs["LnPrior"](x, **kwargs)
     if np.isinf(lnprior):
-        blobs = [np.nan, np.nan] + 6*[np.nan for _ in kwargs["PLANETLIST"]]
+        blobs = np.array([np.nan, np.nan] + 6*[np.nan for _ in kwargs["PLANETLIST"]])
         return -np.inf, blobs
 
     # Get strings containing VPLanet input files (they must be provided!)
@@ -138,13 +138,12 @@ def LnLike(x, **kwargs):
         os.remove(os.path.join(PATH, "output", logfile))
     except FileNotFoundError:
         # Run failed!
-        blobs = [np.nan, np.nan] + 6*[np.nan for _ in kwargs["PLANETLIST"]]
-        print("2", -np.inf, blobs)
+        blobs = np.array([np.nan, np.nan] + 6*[np.nan for _ in kwargs["PLANETLIST"]])
         return -np.inf, blobs
 
     # Ensure we ran for as long as we set out to
     if not output.log.final.system.Age / utils.YEARSEC >= dStopTime:
-        blobs = [np.nan, np.nan] + 6*[np.nan for _ in kwargs["PLANETLIST"]]
+        blobs = np.array([np.nan, np.nan] + 6*[np.nan for _ in kwargs["PLANETLIST"]])
         return -np.inf, blobs
 
     # Get planet output parameters. Porb and masses are determined by priors
@@ -185,7 +184,7 @@ def LnLike(x, **kwargs):
     lnlike = -0.5 * lnlike + lnprior
 
     # Return likelihood and blobs
-    blobs = [dLum, dLogLumXUV] + dPorbs + dPlanetMasses + dRGTimes + dEnvMasses + dWaterMasses + dOxygenMasses
+    blobs = np.array([dLum, dLogLumXUV] + dPorbs + dPlanetMasses + dRGTimes + dEnvMasses + dWaterMasses + dOxygenMasses)
     return lnlike, blobs
 
 # end function
@@ -352,29 +351,9 @@ def RunMCMC(x0=None, ndim=5, nwalk=100, nsteps=5000, pool=None, backend=None,
 
     ### Run MCMC ###
 
-    # Define blobs, blob data types
-    dtype = [("dLum", np.float64), ("dLogLXUV", np.float64)]
-    dtypeEnv = []
-    dtypeMass = []
-    dtypePorb = []
-    dtypeRG = []
-    dtypeWater = []
-    dtypeOxy = []
-    dtype
-    for name in kwargs["PLANETLIST"]:
-        name = str(name).lower()
-        dtypeEnv.append(("dEnvMass_%s" % name, np.float64))
-        dtypePorb.append(("dPorb_%s" % name, np.float64))
-        dtypeMass.append(("dPlanetMass_%s" % name, np.float64))
-        dtypeRG.append(("dRGTime_%s" % name, np.float64))
-        dtypeWater.append(("dWaterMass_%s" % name, np.float64))
-        dtypeOxy.append(("dOxygenMass_%s" % name, np.float64))
-    dtype += dtypePorb + dtypeMass + dtypeRG + dtypeEnv + dtypeWater + dtypeOxy
-
     # Initialize the sampler object
     sampler = emcee.EnsembleSampler(nwalk, ndim, LnLike, kwargs=kwargs,
-                                    pool=pool, blobs_dtype=dtype,
-                                    backend=handler)
+                                    pool=pool, backend=handler)
 
     # Actually run the MCMC
     if restart:
