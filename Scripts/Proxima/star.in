@@ -16,4 +16,4 @@ dXUVBeta      1.23                        # XUV decay power law exponent
 sStellarModel proximacen                  # Stellar evolution model used in Barnes et al. (2016)
 
 # Output
-saOutputOrder Time -Luminosity -LXUVStellar  # Output options
+saOutputOrder Time -Luminosity -LXUVStellar -Radius Temperature HZLimRunaway # Output options

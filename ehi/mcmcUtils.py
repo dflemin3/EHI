@@ -200,7 +200,6 @@ def GetEvol(x, **kwargs):
     dMass, dSatXUVFrac, dSatXUVTime, dStopTime, dXUVBeta = x
     dSatXUVFrac = 10 ** dSatXUVFrac # Unlog
     dStopTime *= 1.e9 # Convert from Gyr -> yr
-    dOutputTime = dStopTime # Output only at the end of the simulation
     dSatXUVTime = 10 ** dSatXUVTime # Unlog
 
     # Get the prior probability
@@ -232,7 +231,7 @@ def GetEvol(x, **kwargs):
     planetFiles = [pname + '.in' for pname in planetNames]
     starFile = starName + '.in'
     logfile = sysName + '.log'
-    planetFwFiles = ['%s.%s.forward' % (pname, sysName) for name in kwargs["PLANETLIST"]]
+    planetFwFiles = ['%s.%s.forward' % (sysName, name) for name in kwargs["PLANETLIST"]]
     starFwFile = '%s.star.forward' % sysName
 
     # Get masses, initial eccentricities, Porbs in order from inner -> outer
@@ -262,13 +261,12 @@ def GetEvol(x, **kwargs):
     # Populate the system input file
 
     # Populate list of planets
-    saBodyFiles = str(starFile)
+    saBodyFiles = str(starFile) + " "
     for pFile in planetFiles:
         saBodyFiles += str(pFile) + " "
     saBodyFiles = saBodyFiles.strip()
 
     vpl_in = re.sub('%s(.*?)#' % "dStopTime", '%s %.6e #' % ("dStopTime", dStopTime), vpl_in)
-    vpl_in = re.sub('%s(.*?)#' % "dOutputTime", '%s %.6e #' % ("dOutputTime", dOutputTime), vpl_in)
     vpl_in = re.sub('sSystemName(.*?)#', 'sSystemName %s #' % sysName, vpl_in)
     vpl_in = re.sub('saBodyFiles(.*?)#', 'saBodyFiles %s #' % saBodyFiles, vpl_in)
     with open(os.path.join(PATH, "output", sysFile), 'w') as f:
@@ -295,7 +293,6 @@ def GetEvol(x, **kwargs):
     if not output.log.final.system.Age / utils.YEARSEC >= dStopTime:
         return None
 
-    # Return output
     return output
 # end function
 
@@ -369,7 +366,7 @@ def RunMCMC(x0=None, ndim=5, nwalk=100, nsteps=5000, pool=None, backend=None,
     # Cache results into a npz?
     if npzCache is not None:
         # Estimate burnin, thin timescales
-        tau = 2#sampler.get_autocorr_time()
+        tau = sampler.get_autocorr_time()
         burnin = int(2*np.max(tau))
         thin = int(0.5*np.min(tau))
 

@@ -4,17 +4,17 @@ saModules     atmesc                      # Modules to apply, exact spelling req
 
 # Physical Properties
 dMass         -1.27                       # Mass [Mearth]
+dRadius       -1.07                       # Radius [Mearth]
 dRotPeriod    -1.0                        # Rotation period, negative -> days
 dObliquity    0.0                         # Obliquity
 dRadGyra      0.5                         # Radius of gyration (moment of inertia constant)
-#dOrbPeriod    -11.186                     # Orbital period
-dSemi         1
+dOrbPeriod    -11.186                     # Orbital period
 
 # ATMESC Properties
 dXFrac                    1.0             # X-Ray/XUV absorption radius (fraction of planet radius)
-dAtmXAbsEffH2O            0.15            # Water X-ray/XUV absorption efficiency
-dAtmXAbsEffH              0.15            # Hydrogen X-ray/XUV absorption efficiency
-dSurfWaterMass            -5.0            # Initial Surface Water Mass  (Terrestrial Oceans)
+#dAtmXAbsEffH2O            0.1            # Water X-ray/XUV absorption efficiency
+sAtmXAbsEffH2OModel       bolmont         # Water X-ray/XUV absorption efficiency model
+dSurfWaterMass            -20.0           # Initial Surface Water Mass  (Terrestrial Oceans)
 dEnvelopeMass             0.0             # Initial H Envelope Mass (Earth masses)
 bHaltSurfaceDesiccated    0               # Halt when dry?
 bHaltEnvelopeGone         0               # Halt when evaporated?
