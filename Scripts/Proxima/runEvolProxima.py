@@ -11,7 +11,7 @@ import emcee
 from ehi import proxima, mcmcUtils
 
 # Define run parameters
-nsamples = 10
+nsamples = 1000
 planetList = ["proximab.in"]
 
 # RNG seed
@@ -86,7 +86,7 @@ while ii < nsamples:
         ii = ii + 1
 
 # Cache results
-np.savez("proximaEvol.npz", time=time, SurfWaterMass=np.array(waterMass),
+np.savez("../../Data/proximaEvol.npz", time=time, SurfWaterMass=np.array(waterMass),
          OxygenMass=np.array(oxygenMass), Luminosity=np.array(lum),
          LXUVStellar=np.array(lumXUV), Radius=np.array(radius),
          Temperature=np.array(temp), HZLimRunaway=np.array(hzlimrun))
