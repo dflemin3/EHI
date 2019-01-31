@@ -6,6 +6,7 @@ docs
 
 import vplot as vpl
 import numpy as np
+from scipy.stats import norm
 import emcee
 import subprocess
 import re
@@ -16,7 +17,11 @@ from . import utils
 from . import proxima
 
 
-__all__ = ["FunctionWrapper", "LnLike", "GetEvol", "RunMCMC"]
+__all__ = ["FunctionWrapper", "LnLike", "GetEvol", "RunMCMC",
+           "waterPriorRaymond2007Sample", "waterPriorUniformSample",
+           "waterPriorDeltaSample", "waterPriorLogUniformSample"]
+
+### Utility functions ###
 
 class FunctionWrapper(object):
     """"
@@ -38,6 +43,129 @@ class FunctionWrapper(object):
 
         return self.f(x, *self.args, **self.kwargs)
 # end class
+
+
+### Globally accessible priors ###
+
+def waterPriorUniformSample(size=1, low=0.0, high=100.0, **kwargs):
+    """
+    Sample initial water inventory in TO from uniform distribution from [low,high)
+
+    Parameters
+    ----------
+    size : int (optional)
+        number of samples. Defaults to 1
+    low : float (optional)
+        Low range limit.  Defaults to 0
+    high : float (optional)
+        High range limit. Defaults to 100
+    **kwargs
+
+    Returns
+    -------
+    samples : float, array-like
+        initial water inventory in TO of length size
+    """
+
+    ret = np.random.uniform(low=low, high=high, size=size)
+
+    if size > 1:
+        return ret
+    else:
+        return ret[0]
+# end function
+
+
+def waterPriorLogUniformSample(size=1, low=-5, high=-1.30, **kwargs):
+    """
+    Sample initial water inventory in TO from log-uniform distribution of water
+    mass fractions based on results from Mulders+2015 and Ciesla+2015. Sample
+    over [low,high) where the default values are [-1.0e-5,5.0e-2), or [-5,-1.3]
+
+    Parameters
+    ----------
+    size : int (optional)
+        number of samples. Defaults to 1
+    low : float (optional)
+        Low range limit.  Defaults to -5, or 1.0e-5
+    high : float (optional)
+        High range limit. Defaults to 5.0e-2, or -1.3
+    **kwargs
+
+    Returns
+    -------
+    samples : float, array-like
+        initial water inventory in TO of length size
+    """
+
+    ret = 10**np.random.uniform(low=low, high=high, size=size) * MEarth / MTO
+
+    if size > 1:
+        return ret
+    else:
+        return ret[0]
+# end function
+
+
+def waterPriorRaymond2007Sample(size=1, **kwargs):
+    """
+    Sample initial water inventory in TO from Gaussian fit to Raymond+2007
+    water delivery simulations.
+
+    Parameters
+    ----------
+    size : int (optional)
+        number of samples. Defaults to 1
+    **kwargs
+
+    Returns
+    -------
+    samples : float, array-like
+        initial water inventory in TO of length size
+    """
+
+    # Fit mean, std to Raymond+2007 log10 water mass fractions. See waterPrior.py
+    raymu, raysig = -2.17, 0.32
+
+    # Return in terrestrial Earth ocean masses (TO)
+    ret = 10**norm.rvs(raymu, raystd, size=size) * utils.MEarth / utils.MTO
+
+    if size > 1:
+        return ret
+    else:
+        return ret[0]
+# end function
+
+
+def waterPriorDeltaSample(size=1, loc=20.0, **kwargs):
+    """
+
+    Parameters
+    ----------
+    size : int (optional)
+        number of samples. Defaults to 1
+    loc : float (optional)
+        Number of oceans to return.  Defaults to 20.
+    **kwargs
+
+    Returns
+    -------
+    samples : float, array-like
+        initial water inventory in TO of length size
+    """
+
+    ret = []
+    for _ in range(size):
+        ret.append(loc)
+
+    if size > 1:
+        return ret
+    else:
+        return ret[0]
+# end function
+
+
+### Loglikelihood and MCMC functions ###
 
 def LnLike(x, **kwargs):
     """
@@ -90,6 +218,9 @@ def LnLike(x, **kwargs):
     planetEccs = [kwargs["PlanetEccSample"](name) for name in kwargs["PLANETLIST"]]
     planetPorbs = [kwargs["PlanetPorbSample"](name) for name in kwargs["PLANETLIST"]]
 
+    # Get water prior for each planet
+    initWater = [kwargs["WaterPrior"]() for _ in kwargs["PLANETLIST"]]
+
     # Populate the planet input files for each planet.  Note that Porbs negative
     # to make units days in VPLanet, and same for mass/rad but for Earth units
     for ii, planet_in in enumerate(planet_ins):
@@ -97,6 +228,7 @@ def LnLike(x, **kwargs):
         planet_in = re.sub("%s(.*?)#" % "dRadius", "%s %.6e #" % ("dRadius", -planetRadii[ii]), planet_in)
         planet_in = re.sub("%s(.*?)#" % "dEcc", "%s %.6e #" % ("dEcc", planetEccs[ii]), planet_in)
         planet_in = re.sub("%s(.*?)#" % "dOrbPeriod", "%s %.6e #" % ("dOrbPeriod", -planetPorbs[ii]), planet_in)
+        planet_in = re.sub("%s(.*?)#" % "dSurfWaterMass", "%s %.6e #" % ("dSurfWaterMass", -initWater[ii]), planet_in)
         with open(os.path.join(PATH, "output", planetFiles[ii]), 'w') as f:
             print(planet_in, file = f)
 

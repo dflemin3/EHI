@@ -11,11 +11,11 @@ import emcee
 from ehi import proxima, mcmcUtils
 
 # Define run parameters
-nsamples = 1000
+nsamples = 100
 planetList = ["proximab.in"]
 
 # RNG seed
-seed = 42
+seed = 90
 np.random.seed(seed)
 
 # Options
@@ -61,6 +61,7 @@ lumXUV = []
 radius = []
 temp = []
 hzlimrun = []
+time = []
 
 ii = 0
 while ii < nsamples:
@@ -71,8 +72,7 @@ while ii < nsamples:
     # If simulation succeeded, extract data, move on to the next one
     if output is not None:
         # Extract simulation data
-        if ii == 0:
-            time = output.star.Time
+        time.append(output.star.Time)
 
         waterMass.append(output.proximab.SurfWaterMass)
         oxygenMass.append(output.proximab.OxygenMass + output.proximab.OxygenMantleMass)
@@ -86,9 +86,8 @@ while ii < nsamples:
         ii = ii + 1
 
 # Cache results
-np.savez("../../Data/proximaEvol.npz", time=time, SurfWaterMass=np.array(waterMass),
-         OxygenMass=np.array(oxygenMass), Luminosity=np.array(lum),
-         LXUVStellar=np.array(lumXUV), Radius=np.array(radius),
-         Temperature=np.array(temp), HZLimRunaway=np.array(hzlimrun))
+np.savez("../../Data/proximaEvol.npz", time=time, SurfWaterMass=waterMass,
+         OxygenMass=oxygenMass, Luminosity=lum, LXUVStellar=lumXUV,
+         Radius=radius, Temperature=temp, HZLimRunaway=hzlimrun)
 
 # Done!

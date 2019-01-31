@@ -15,7 +15,8 @@ BIGG = 6.67428e-11 # Universal Gravitational Constant in cgs
 DAYSEC = 86400.0 # seconds per day
 MSUN = 1.988416e30 # mass of sun in g
 AUCM = 1.49598e11 # cm per AU
-
+MTO = 1.4e24 # Mass of all of Earth's water in g
+MEarth = 5.972e27 # Mass of Earth in g
 
 def loguniform(low=0, high=1, size=None, base=10.0):
     """
