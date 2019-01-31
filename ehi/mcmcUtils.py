@@ -98,7 +98,7 @@ def waterPriorLogUniformSample(size=1, low=-5, high=-1.30, **kwargs):
         initial water inventory in TO of length size
     """
 
-    ret = 10**np.random.uniform(low=low, high=high, size=size) * MEarth / MTO
+    ret = 10**np.random.uniform(low=low, high=high, size=size) * utils.MEarth / utils.MTO
 
     if size > 1:
         return ret
