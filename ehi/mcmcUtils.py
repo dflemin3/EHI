@@ -128,7 +128,7 @@ def waterPriorRaymond2007Sample(size=1, **kwargs):
     raymu, raysig = -2.17, 0.32
 
     # Return in terrestrial Earth ocean masses (TO)
-    ret = 10**norm.rvs(raymu, raystd, size=size) * utils.MEarth / utils.MTO
+    ret = 10**norm.rvs(raymu, raysig, size=size) * utils.MEarth / utils.MTO
 
     if size > 1:
         return ret
