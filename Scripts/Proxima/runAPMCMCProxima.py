@@ -15,39 +15,47 @@ import george
 # Define algorithm parameters
 ndim = 5                         # Dimensionality of the problem
 m0 = 250                         # Initial size of training set
-m = 50                           # Number of new points to find each iteration
-nmax = 30                        # Maximum number of iterations
-Dmax = 0.1                       # KL-Divergence convergence limit
+m = 100                          # Number of new points to find each iteration
+nmax = 10                        # Maximum number of iterations
+Dmax = 10.0                      # KL-Divergence convergence limit
 kmax = 5                         # Number of iterations for Dmax convergence to kick in
-seed = 57                        # RNG seed
-nKLSamples = int(1.0e6)          # Number of samples from posterior to use to calculate KL-Divergence
+seed = 90                        # RNG seed
+nGPRestarts = 20                 # Number of times to restart GP hyperparameter optimizations
+nMinObjRestarts = 10             # Number of times to restart objective fn minimization
+optGPEveryN = 25                 # Optimize GP hyperparameters even this many iterations
+nKLSamples = int(1.0e7)          # Number of samples from posterior to use to calculate KL-Divergence
 bounds = ((0.1, 0.15),
           (-5.0, -2.0),
           (-0.3, 1.0),
           (1.0e-3, 8.0),
-          (-2.0, -0.5))          # Prior bounds
-algorithm = "bape"               # Use the Kandasamy et al. (2015) formalism
+          (-2.0, 0.0))          # Prior bounds
+algorithm = "bape"              # Use the Kandasamy et al. (2015) formalism
 
+# Set RNG seed
 np.random.seed(seed)
 
-# emcee.EnsembleSampler parameters
+# emcee.EnsembleSampler, emcee.EnsembleSampler.run_mcmc and GMM parameters
 samplerKwargs = {"nwalkers" : 100}
-# emcee.EnsembleSampler.run_mcmc parameters
 mcmcKwargs = {"iterations" : int(5.0e3)}
 gmmKwargs = {"reg_covar" : 1.0e-5}
 
-# Loglikelihood function setup
-kwargs = proxima.kwargsPROXIMA            # All the Proxima system constraints
+# Loglikelihood function setup required to run VPLanet simulations
+planetList = ["proximab.in"]
+kwargs = proxima.kwargsPROXIMA
 PATH = os.path.dirname(os.path.abspath(__file__))
 kwargs["PATH"] = PATH
+kwargs["planetList"] = planetList
+kwargs["WaterPrior"] = ehimc.waterPriorDeltaBarnes2016Sample
 
 # Get the input files, save them as strings
+planet_ins = []
+for planet in planetList:
+    with open(os.path.join(PATH, planet), 'r') as f:
+        planet_ins.append(f.read())
+    kwargs["PLANETIN"] = planet_ins
 with open(os.path.join(PATH, "star.in"), 'r') as f:
     star_in = f.read()
     kwargs["STARIN"] = star_in
-with open(os.path.join(PATH, "planet.in"), 'r') as f:
-    planet_in = f.read()
-    kwargs["PLANETIN"] = planet_in
 with open(os.path.join(PATH, "vpl.in"), 'r') as f:
     vpl_in = f.read()
     kwargs["VPLIN"] = vpl_in
@@ -66,8 +74,6 @@ else:
     sims = np.load("apFModelCache.npz")
     theta = sims["theta"]
     y = sims["y"]
-
-print(theta.shape)
 
 ### Initialize GP ###
 
@@ -99,7 +105,10 @@ ap = approx.ApproxPosterior(theta=theta,
 ap.run(m=m, nmax=nmax, Dmax=Dmax, kmax=kmax, bounds=bounds,  estBurnin=True,
        nKLSamples=nKLSamples, mcmcKwargs=mcmcKwargs, maxComp=12, thinChains=True,
        samplerKwargs=samplerKwargs, verbose=True, gmmKwargs=gmmKwargs,
-       nGPRestarts=20, optGPEveryN=25, seed=seed, cache=True, **kwargs)
+       nGPRestarts=nGPRestarts, nMinObjRestarts=nMinObjRestarts,
+       optGPEveryN=optGPEveryN, seed=seed, cache=True, **kwargs)
+
+xxx
 
 # Check out the final posterior distribution!
 

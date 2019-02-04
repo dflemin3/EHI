@@ -10,7 +10,8 @@ from statsmodels.stats.proportion import proportion_confint
 import matplotlib.pyplot as plt
 
 
-filename = "../Data/proxima.h5"
+#filename = "../../Data/proximaWDelta20EpsBolmont.h5"
+filename = "../../Data/proximaLogUniformEpsBolmont.h5"
 #filename = "apRun9.h5"
 
 plotBlobs = True

@@ -19,7 +19,8 @@ from . import proxima
 
 __all__ = ["FunctionWrapper", "LnLike", "GetEvol", "RunMCMC",
            "waterPriorRaymond2007Sample", "waterPriorUniformSample",
-           "waterPriorDeltaSample", "waterPriorLogUniformSample"]
+           "waterPriorDeltaSample", "waterPriorLogUniformSample",
+           "waterPriorDeltaBarnes2016Sample"]
 
 ### Utility functions ###
 
@@ -129,6 +130,35 @@ def waterPriorRaymond2007Sample(size=1, **kwargs):
 
     # Return in terrestrial Earth ocean masses (TO)
     ret = 10**norm.rvs(raymu, raysig, size=size) * utils.MEarth / utils.MTO
+
+    if size > 1:
+        return ret
+    else:
+        return ret[0]
+# end function
+
+
+def waterPriorDeltaBarnes2016Sample(size=1, **kwargs):
+    """
+
+    Parameters
+    ----------
+    size : int (optional)
+        number of samples. Defaults to 1
+    loc : float (optional)
+        Number of oceans to return.  Defaults to 5 following Barnes+2016's
+        fiducial case.
+    **kwargs
+
+    Returns
+    -------
+    samples : float, array-like
+        initial water inventory in TO of length size
+    """
+
+    ret = []
+    for _ in range(size):
+        ret.append(5.0)
 
     if size > 1:
         return ret
