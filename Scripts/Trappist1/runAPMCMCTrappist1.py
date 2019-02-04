@@ -14,14 +14,14 @@ import george
 
 # Define algorithm parameters
 ndim = 5                         # Dimensionality of the problem
-m0 = 5                         # Initial size of training set
-m = 5                          # Number of new points to find each iteration
+m0 = 250                         # Initial size of training set
+m = 100                          # Number of new points to find each iteration
 nmax = 10                        # Maximum number of iterations
 Dmax = 10.0                      # KL-Divergence convergence limit
 kmax = 5                         # Number of iterations for Dmax convergence to kick in
 seed = 90                        # RNG seed
-nGPRestarts = 1#20                 # Number of times to restart GP hyperparameter optimizations
-nMinObjRestarts = 1#10             # Number of times to restart objective fn minimization
+nGPRestarts = 20                 # Number of times to restart GP hyperparameter optimizations
+nMinObjRestarts = 10             # Number of times to restart objective fn minimization
 optGPEveryN = 25                 # Optimize GP hyperparameters even this many iterations
 nKLSamples = int(1.0e7)          # Number of samples from posterior to use to calculate KL-Divergence
 bounds = ((0.1, 0.15),
@@ -108,8 +108,6 @@ ap.run(m=m, nmax=nmax, Dmax=Dmax, kmax=kmax, bounds=bounds,  estBurnin=True,
        samplerKwargs=samplerKwargs, verbose=True, gmmKwargs=gmmKwargs,
        nGPRestarts=nGPRestarts, nMinObjRestarts=nMinObjRestarts,
        optGPEveryN=optGPEveryN, seed=seed, cache=True, **kwargs)
-
-xxx
 
 # Check out the final posterior distribution!
 

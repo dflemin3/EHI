@@ -108,8 +108,6 @@ ap.run(m=m, nmax=nmax, Dmax=Dmax, kmax=kmax, bounds=bounds,  estBurnin=True,
        nGPRestarts=nGPRestarts, nMinObjRestarts=nMinObjRestarts,
        optGPEveryN=optGPEveryN, seed=seed, cache=True, **kwargs)
 
-xxx
-
 # Check out the final posterior distribution!
 
 # Load in chain from last iteration
