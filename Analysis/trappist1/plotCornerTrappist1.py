@@ -10,9 +10,10 @@ from statsmodels.stats.proportion import proportion_confint
 import matplotlib.pyplot as plt
 
 
-filename = "../../Data/trappist120EOEpsBolmont.h5"
+#filename = "../../Data/trappist120EOEpsBolmont.h5"
+filename = "../../Data/apRun3.h5"
 
-plotBlobs = True
+plotBlobs = False
 
 # Open file
 reader = emcee.backends.HDFBackend(filename)
@@ -71,6 +72,6 @@ else:
 fig = corner.corner(samples, quantiles=[0.16, 0.5, 0.84], labels=labels,
                     show_titles=True, title_kwargs={"fontsize": 12})
 
-fig.savefig("trappist1Corner.png", bbox_inches="tight")
+fig.savefig("trappist1CornerAP.png", bbox_inches="tight")
 
 # Done!

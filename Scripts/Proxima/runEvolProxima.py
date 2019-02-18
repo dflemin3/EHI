@@ -17,11 +17,13 @@ planetList = ["proximab.in"]
 # RNG seed
 seed = 90
 np.random.seed(seed)
+dataDir = "../../Data/proximaLogUniformEpsBolmont.h5"
 
 # Options
 kwargs = proxima.kwargsPROXIMA
 kwargs["LnPrior"] = proxima.LnPriorPROXIMA
 kwargs["PriorSample"] = proxima.samplePriorPROXIMA
+kwargs["WaterPrior"] = mcmcUtils.waterPriorLogUniformSample
 PATH = os.path.dirname(os.path.abspath(__file__))
 kwargs["PATH"] = PATH
 kwargs["planetList"] = planetList
@@ -44,7 +46,7 @@ if not os.path.exists(os.path.join(PATH, "output")):
     os.makedirs(os.path.join(PATH, "output"))
 
 # Draw nsmaples from the posterior distributions
-reader = emcee.backends.HDFBackend("../../Data/proxima.h5")
+reader = emcee.backends.HDFBackend(dataDir)
 tau = reader.get_autocorr_time()
 burnin = int(2*np.max(tau))
 thin = int(0.5*np.min(tau))
@@ -86,8 +88,9 @@ while ii < nsamples:
         ii = ii + 1
 
 # Cache results
-np.savez("../../Data/proximaEvol.npz", time=time, SurfWaterMass=waterMass,
-         OxygenMass=oxygenMass, Luminosity=lum, LXUVStellar=lumXUV,
-         Radius=radius, Temperature=temp, HZLimRunaway=hzlimrun)
+np.savez("../../Data/proximaLogUniformEpsBolmontEvol.npz", time=time,
+         SurfWaterMass=waterMass, OxygenMass=oxygenMass, Luminosity=lum,
+         LXUVStellar=lumXUV, Radius=radius, Temperature=temp,
+         HZLimRunaway=hzlimrun)
 
 # Done!

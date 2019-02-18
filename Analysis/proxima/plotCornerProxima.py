@@ -4,31 +4,38 @@
 """
 
 import numpy as np
+import os
 import corner
 import emcee
 from statsmodels.stats.proportion import proportion_confint
+import matplotlib as mpl
 import matplotlib.pyplot as plt
+from matplotlib.gridspec import GridSpec
 
+#Typical plot parameters that make for pretty plots
+mpl.rcParams['figure.figsize'] = (9,8)
+mpl.rcParams['font.size'] = 18.0
 
-#filename = "../../Data/proximaWDelta20EpsBolmont.h5"
-filename = "../../Data/proximaLogUniformEpsBolmont.h5"
-#filename = "apRun9.h5"
+## for Palatino and other serif fonts use:
+mpl.rc('font',**{'family':'serif'})
+mpl.rc('text', usetex=True)
 
-plotBlobs = True
+# Path to data
+filename = "../../Data/proxima.h5"
+
+# Whether or not to plot blobs
+plotBlobs = False
 
 # Open file
 reader = emcee.backends.HDFBackend(filename)
 
-print(reader.iteration)
+# Compute burnin
 tau = reader.get_autocorr_time(tol=0)
-if np.any(~np.isfinite(tau)):
-    tau = 500
-
 burnin = int(2*np.max(tau))
 thin = int(0.5*np.min(tau))
-
 print("Burnin, thin:", burnin, thin)
 
+# Load data
 chain = reader.get_chain(discard=burnin, flat=True, thin=thin)
 if plotBlobs:
     tmp = reader.get_blobs(discard=burnin, flat=True, thin=thin)
@@ -43,9 +50,11 @@ if plotBlobs:
     ehiErrDown, ehiErrUp = proportion_confint(np.sum(ehi), len(ehi), alpha=0.32, method="agresti_coull")
     print("EHI +/-: %e %e/%e" % (ehiEst, ehiErrUp-ehiEst, ehiEst-ehiErrDown))
 
+    # Ignore dEnvMass column
     mask = np.array([0, 1, 2, 3, 4, 6, 7])
     samples = np.concatenate((chain, blobs[:,mask]), axis=1)
 
+    # Define labels
     labels = ["Mass", "SatXUVFrac", "SatXUVTime", "Age", "XUVBeta", "Lum",
               "logLumXUV", "Porb", "Mass", "dRGTime", "WaterMass",
               "OxygenMass"]
@@ -59,12 +68,11 @@ else:
     samples = chain
     labels = ["Mass", "SatXUVFrac", "SatXUVTime", "Age", "XUVBeta"]
 
-#samples = np.load("apFModelCache.npz")["theta"]
-#print(samples.shape)
-
+# Plot!
 fig = corner.corner(samples, quantiles=[0.16, 0.5, 0.84], labels=labels,
                     show_titles=True, title_kwargs={"fontsize": 12})
 
-fig.savefig("proximaCorner.png", bbox_inches="tight")
+# Save!
+fig.savefig("../../Plots/proximaCorner.pdf", bbox_inches="tight", dpi=200)
 
 # Done!

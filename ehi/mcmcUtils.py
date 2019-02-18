@@ -251,6 +251,10 @@ def LnLike(x, **kwargs):
     # Get water prior for each planet
     initWater = [kwargs["WaterPrior"]() for _ in kwargs["PLANETLIST"]]
 
+    # Subtract water mass from dMass so total mass is conserved
+    for ii in range(len(planetMasses)):
+        planetMasses[ii] = planetMasses[ii] - (initWater[ii] * utils.MTO / utils.MEarth)
+
     # Populate the planet input files for each planet.  Note that Porbs negative
     # to make units days in VPLanet, and same for mass/rad but for Earth units
     for ii, planet_in in enumerate(planet_ins):
@@ -402,6 +406,13 @@ def GetEvol(x, **kwargs):
     planetEccs = [kwargs["PlanetEccSample"](name) for name in kwargs["PLANETLIST"]]
     planetPorbs = [kwargs["PlanetPorbSample"](name) for name in kwargs["PLANETLIST"]]
 
+    # Get water prior for each planet
+    initWater = [kwargs["WaterPrior"]() for _ in kwargs["PLANETLIST"]]
+
+    # Subtract water mass from dMass so total mass is conserved
+    for ii in range(len(planetMasses)):
+        planetMasses[ii] = planetMasses[ii] - (initWater[ii] * utils.MTO / utils.MEarth)
+
     # Populate the planet input files for each planet.  Note that Porbs negative
     # to make units days in VPLanet, and same for mass/rad but for Earth units
     for ii, planet_in in enumerate(planet_ins):
@@ -409,6 +420,8 @@ def GetEvol(x, **kwargs):
         planet_in = re.sub("%s(.*?)#" % "dRadius", "%s %.6e #" % ("dRadius", -planetRadii[ii]), planet_in)
         planet_in = re.sub("%s(.*?)#" % "dEcc", "%s %.6e #" % ("dEcc", planetEccs[ii]), planet_in)
         planet_in = re.sub("%s(.*?)#" % "dOrbPeriod", "%s %.6e #" % ("dOrbPeriod", -planetPorbs[ii]), planet_in)
+        planet_in = re.sub("%s(.*?)#" % "dSurfWaterMass", "%s %.6e #" % ("dSurfWaterMass", -initWater[ii]), planet_in)
+
         with open(os.path.join(PATH, "output", planetFiles[ii]), 'w') as f:
             print(planet_in, file = f)
 

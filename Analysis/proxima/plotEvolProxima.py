@@ -18,7 +18,9 @@ mpl.rc('font',**{'family':'serif'})
 mpl.rc('text', usetex=True)
 
 # Read in evolutionary tracks
-data = np.load("../../Data/proximaEvol.npz")
+dataName = "proximaWDelta20EpsBolmont"
+dataDir = os.path.join("../../Data", dataName + "Evol.npz")
+data = np.load(dataDir)
 nsamples = len(data["Luminosity"])
 
 ### Plot Lum, LumXUV, radius evolution and compare to observations ###
@@ -70,7 +72,8 @@ axes[2].set_ylabel("Radius [R$_{\odot}$]", fontsize=25)
 axes[2].set_xlabel("Time [yr]", fontsize=25)
 axes[2].set_xscale("log")
 
-fig.savefig("../../Plots/proximaEvol.png", bbox_inches="tight", dpi=200)
+fig.savefig(os.path.join("../../Plots", dataName + "WaterEvol.png"),
+            bbox_inches="tight", dpi=200)
 
 ### Plot runaway greenhouse HZ limit ###
 
@@ -91,7 +94,8 @@ ax.set_xscale("log")
 ax.set_xlabel("Time [yr]", fontsize=25)
 ax.set_ylabel("Distance [AU]", fontsize=25)
 
-fig.savefig("../../Plots/proximaHZLimEvol.png", bbox_inches="tight", dpi=200)
+fig.savefig(os.path.join("../../Plots", dataName + "HZLimEvol.png"),
+            bbox_inches="tight", dpi=200)
 
 ### Plot surface water mass, oxygen buildup amounts ###
 
@@ -117,5 +121,6 @@ axes[1].set_xlabel("Time [yr]", fontsize=25)
 axes[1].set_yscale("log")
 axes[1].set_xscale("log")
 
-fig.savefig("../../Plots/proximaBEvol.png", bbox_inches="tight", dpi=200)
+fig.savefig(os.path.join("../../Plots", dataName + "O2Evol.png"),
+            bbox_inches="tight", dpi=200)
 # Done!

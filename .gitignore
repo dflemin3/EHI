@@ -12,5 +12,6 @@ dist/*
 *.pdf
 *.cache
 *.h5
+vplot*
 References/
 
