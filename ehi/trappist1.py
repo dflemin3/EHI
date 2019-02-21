@@ -137,13 +137,12 @@ def LnPriorTRAPPIST1(x, **kwargs):
     if (dSatXUVFrac < -5) or (dSatXUVFrac > -2):
         return -np.inf
 
-    # log flat prior on saturation timescale log10[Gyr]
-    if (dSatXUVTime < -0.3) or (dSatXUVTime > 1.0):
+    # log flat prior on saturation timescale log10[Gyr] [500 Myr - 12 Gyr]
+    if (dSatXUVTime < -0.3) or (dSatXUVTime > 1.07918):
         return -np.inf
 
     # Large bound for age of system [Gyr] informed by Burgasser et al. (2017)
-    # and the end of the Baraffe et al. (2015) stellar evolution grids
-    if (dStopTime < 1.0e-3) or (dStopTime > 9.8):
+    if (dStopTime < 0.5) or (dStopTime > 12.0):
         return -np.inf
 
     if (dXUVBeta < -2.0) or (dXUVBeta > 0.0):
@@ -170,7 +169,7 @@ def samplePriorTRAPPIST1(size=1, **kwargs):
         while True:
             guess = [np.random.uniform(low=0.07, high=0.11),
                      np.random.uniform(low=-5.0, high=-2.0),
-                     np.random.uniform(low=-0.3, high=1.0),
+                     np.random.uniform(low=-0.3, high=1.07918),
                      norm.rvs(loc=ageTrappist1, scale=ageTrappist1Sig, size=1)[0],
                      norm.rvs(loc=betaTrappist1, scale=betaTrappist1Sig, size=1)[0]]
             if not np.isinf(LnPriorTRAPPIST1(guess, **kwargs)):
