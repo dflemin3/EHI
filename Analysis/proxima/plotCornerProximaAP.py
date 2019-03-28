@@ -35,7 +35,7 @@ print("Burnin, thin:", burnin, thin)
 # Load data and plot!
 samples = reader.get_chain(discard=burnin, flat=True, thin=thin)
 
-labels = ["Mass", "SatXUVFrac", "SatXUVTime", "Age", "XUVBeta"]
+labels = [r"$m_{\star}$", r"$f_{sat}$", r"$t_{sat}$", r"$t_{\star}$", r"$\beta_{XUV}$"]
 fig = corner.corner(samples, quantiles=[0.16, 0.5, 0.84], labels=labels,
                     show_titles=True, title_kwargs={"fontsize": 12})
 

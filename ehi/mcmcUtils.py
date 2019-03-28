@@ -199,7 +199,7 @@ def waterPriorDeltaSample(size=1, loc=20.0, **kwargs):
 
 def LnLike(x, **kwargs):
     """
-    loglikelihood function: runs VPLanet simulation!
+    loglikelihood function: runs VPLanet simulation
     """
 
     # Get the current vector
@@ -207,7 +207,6 @@ def LnLike(x, **kwargs):
     dSatXUVFrac = 10 ** dSatXUVFrac # Unlog
     dStopTime *= 1.e9 # Convert from Gyr -> yr
     dOutputTime = dStopTime # Output only at the end of the simulation
-    dSatXUVTime = 10 ** dSatXUVTime # Unlog
 
     # Get the prior probability
     lnprior = kwargs["LnPrior"](x, **kwargs)
@@ -366,7 +365,6 @@ def GetEvol(x, **kwargs):
     dMass, dSatXUVFrac, dSatXUVTime, dStopTime, dXUVBeta = x
     dSatXUVFrac = 10 ** dSatXUVFrac # Unlog
     dStopTime *= 1.e9 # Convert from Gyr -> yr
-    dSatXUVTime = 10 ** dSatXUVTime # Unlog
 
     # Get the prior probability
     lnprior = kwargs["LnPrior"](x, **kwargs)

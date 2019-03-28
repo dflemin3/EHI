@@ -66,7 +66,7 @@ if plotBlobs:
     samples[:,5] = samples[:,5]*1.0e3
 else:
     samples = chain
-    labels = ["Mass", "SatXUVFrac", "SatXUVTime", "Age", "XUVBeta"]
+    labels = [r"$m_{\star}$", r"$f_{sat}$", r"$t_{sat}$", r"$t_{\star}$", r"$\beta_{XUV}$"]
 
 # Plot!
 fig = corner.corner(samples, quantiles=[0.16, 0.5, 0.84], labels=labels,

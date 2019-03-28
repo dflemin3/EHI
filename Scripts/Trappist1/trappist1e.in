@@ -21,5 +21,6 @@ bInstantO2Sink          0       # Is Oxygen instantly absorbed by the surface?
 bHaltSurfaceDesiccated  0 	# Halt when dry?
 bHaltEnvelopeGone       0	# Halt when H enevlope evaporated?
 dMinSurfWaterMass      	-1.e-5  # Planet is desiccated when water content drops below this (Earth oceans)
+dJeansTime              -15    # Time at which flow transitions to ballistic
 
 saOutputOrder 	Time -OxygenMass -SurfWaterMass -EnvelopeMass # Output option
