@@ -211,7 +211,7 @@ def LnLike(x, **kwargs):
     # Get the prior probability
     lnprior = kwargs["LnPrior"](x, **kwargs)
     if np.isinf(lnprior):
-        blobs = np.array([np.nan, np.nan] + 6*[np.nan for _ in kwargs["PLANETLIST"]])
+        blobs = np.array([np.nan, np.nan] + 7*[np.nan for _ in kwargs["PLANETLIST"]])
         return -np.inf, blobs
 
     # Get strings containing VPLanet input files (they must be provided!)
@@ -303,17 +303,18 @@ def LnLike(x, **kwargs):
         os.remove(os.path.join(PATH, "output", logfile))
     except FileNotFoundError:
         # Run failed!
-        blobs = np.array([np.nan, np.nan] + 6*[np.nan for _ in kwargs["PLANETLIST"]])
+        blobs = np.array([np.nan, np.nan] + 7*[np.nan for _ in kwargs["PLANETLIST"]])
         return -np.inf, blobs
 
     # Ensure we ran for as long as we set out to
     if not output.log.final.system.Age / utils.YEARSEC >= dStopTime:
-        blobs = np.array([np.nan, np.nan] + 6*[np.nan for _ in kwargs["PLANETLIST"]])
+        blobs = np.array([np.nan, np.nan] + 7*[np.nan for _ in kwargs["PLANETLIST"]])
         return -np.inf, blobs
 
     # Get planet output parameters. Porb and masses are determined by priors
     dEnvMasses = []
     dWaterMasses = []
+    dInitWaterMasses = []
     dOxygenMasses = []
     dPorbs = []
     dPlanetMasses = []
@@ -322,6 +323,7 @@ def LnLike(x, **kwargs):
         name = str(pName).lower()
         dPlanetMasses.append(planetMasses[ii]) # Prior
         dPorbs.append(planetPorbs[ii]) # Prior
+        dInitWaterMasses.append(initWater[ii]) # Prior
         dEnvMasses.append(float(output.log.final.__dict__[name].EnvelopeMass))
         dWaterMasses.append(float(output.log.final.__dict__[name].SurfWaterMass))
         dOxygenMasses.append(float(output.log.final.__dict__[name].OxygenMass) + float(output.log.final.__dict__[name].OxygenMantleMass))
@@ -350,7 +352,7 @@ def LnLike(x, **kwargs):
     lnlike = -0.5 * lnlike + lnprior
 
     # Return likelihood and blobs
-    blobs = np.array([dLum, dLogLumXUV] + dPorbs + dPlanetMasses + dRGTimes + dEnvMasses + dWaterMasses + dOxygenMasses)
+    blobs = np.array([dLum, dLogLumXUV] + dPorbs + dPlanetMasses + dRGTimes + dEnvMasses + dWaterMasses + dInitWaterMasses + dOxygenMasses)
     return lnlike, blobs
 
 # end function
