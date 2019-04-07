@@ -21,7 +21,7 @@ mpl.rc('font',**{'family':'serif'})
 mpl.rc('text', usetex=True)
 
 # Path to data
-filename = "../../Data/trappist1WRaymond2007EpsBolmont.h5"
+filename = "../../Data/trappist1WDelta20EpsBolmont.h5"
 
 # Whether or not to plot blobs
 plotBlobs = False
@@ -70,13 +70,13 @@ else:
     # Just consider stellar data
     samples = chain
     labels = [r"$m_{\star}$ [M$_{\odot}$]", r"$f_{sat}$",
-              r"$t_{sat}$ [$\log_{10}$(Gyr)]", r"Age [Gyr]", r"$\beta_{XUV}$"]
+              r"$t_{sat}$ [Gyr]", r"Age [Gyr]", r"$\beta_{XUV}$"]
 
 # Plot!
 fig = corner.corner(samples, quantiles=[0.16, 0.5, 0.84], labels=labels,
-                    show_titles=True, title_kwargs={"fontsize": 12})
+                    show_titles=True, title_kwargs={"fontsize": 14})
 
 # Save!
-fig.savefig("../../Plots/trappist1CornerWRaymond2007EpsBolmont.pdf", bbox_inches="tight", dpi=200)
+fig.savefig("../../Plots/trappist1CornerWDelta20EpsBolmont.pdf", bbox_inches="tight", dpi=200)
 
 # Done!
