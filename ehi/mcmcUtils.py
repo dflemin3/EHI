@@ -46,6 +46,80 @@ class FunctionWrapper(object):
 # end class
 
 
+def extractMCMCResults(filename, verbose=True, applyBurnin=True, thinChains=True,
+                       blobsExist=True):
+    """
+    Extract and process MCMC results
+
+    Parameters
+    ----------
+    filename : str
+        path to emcee MCMC h5 file
+    verbose : bool (optional)
+        Output convergence diagnostics? Defaults to True.
+    applyBurnin : bool (optional)
+        Apply a burnin to reduce size of chains? Defaults to True.
+    thinChains : bool (optional)
+        Thin chains to reduce their size? Defaults to True.
+    blobsExist : bool (optional)
+        Whether or not blobs exist.  If True, return them! Defaults to True.
+
+    Returns
+    -------
+    chain : numpy array
+        MCMC chain
+    blobs : numpy array
+        MCMC ancillary and derived quantities. Only returned if blobsExist is True
+    """
+
+    # Open file
+    reader = emcee.backends.HDFBackend(filename)
+
+    if verbose:
+        # Compute acceptance fraction for each walker
+        print("Acceptance fraction for each walker:")
+        print(reader.accepted / reader.iteration)
+        print("Mean acceptance fraction:", np.mean(reader.accepted / reader.iteration))
+
+    # Compute convergence diagnostics
+
+    # Compute burnin?
+    tau = reader.get_autocorr_time(tol=0)
+    if applyBurnin:
+        burnin = int(2*np.max(tau))
+    else:
+        burnin = 0
+    if thinChains:
+        thin = int(0.5*np.min(tau))
+    else:
+        thin = 1
+
+    # Output convergence diagnostics?
+    if verbose:
+        print("Burnin, thin:", burnin, thin)
+
+        # Is the length of the chain at least 50 tau?
+        print("Likely converged if iterations > 50 * tau, where tau is the integrated autocorrelation time.")
+        print("Number of iterations / tau:", reader.iteration / tau)
+        print("Mean Number of iterations / tau:", np.mean(reader.iteration / tau))
+
+    # Load data
+    chain = reader.get_chain(discard=burnin, flat=True, thin=thin)
+
+    # Properly shape blobs
+    tmp = reader.get_blobs(discard=burnin, flat=True, thin=thin)
+    if blobsExist:
+        blobs = []
+        for bl in tmp:
+            blobs.append([bl[ii] for ii in range(len(bl))])
+        blobs = np.array(blobs)
+
+        return chain, blobs
+    else:
+        return chain
+# end function
+
+
 ### Globally accessible priors ###
 
 def waterPriorUniformSample(size=1, low=0.0, high=100.0, **kwargs):
