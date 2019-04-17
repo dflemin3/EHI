@@ -22,7 +22,7 @@ mpl.rc('font',**{'family':'serif'})
 mpl.rc('text', usetex=True)
 
 # Path to data
-filename = "../../Data/TRAPPIST1/trappist1WDelta20EpsBolmont.h5"
+filename = "../../Data/TRAPPIST1/trappist1WRaymond2007EpsBolmont.h5"
 
 # Whether or not to plot blobs
 plotBlobs = True
@@ -66,13 +66,11 @@ else:
     labels = [r"$m_{\star}$ [M$_{\odot}$]", r"$f_{sat}$",
               r"$t_{sat}$ [Gyr]", r"Age [Gyr]", r"$\beta_{XUV}$"]
 
-xxx
-
 # Plot!
 fig = corner.corner(samples, quantiles=[0.16, 0.5, 0.84], labels=labels,
                     show_titles=True, title_kwargs={"fontsize": 14})
 
 # Save!
-fig.savefig("../../Plots/trappist1CornerWDelta20EpsBolmont.png", bbox_inches="tight", dpi=200)
+fig.savefig("../../Plots/trappist1CornerWRaymond2007EpsBolmont.png", bbox_inches="tight", dpi=200)
 
 # Done!
