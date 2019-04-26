@@ -179,9 +179,34 @@ def samplePriorTRAPPIST1(size=1, **kwargs):
         while True:
             guess = [np.random.uniform(low=0.07, high=0.11),
                      norm.rvs(loc=fsatTrappist1, scale=fsatTrappist1Sig, size=1)[0],
-                     np.random.uniform(low=0.1, high=12), 
+                     np.random.uniform(low=0.1, high=12),
                      norm.rvs(loc=ageTrappist1, scale=ageTrappist1Sig, size=1)[0],
                      norm.rvs(loc=betaTrappist1, scale=betaTrappist1Sig, size=1)[0]]
+            if not np.isinf(LnPriorTRAPPIST1(guess, **kwargs)):
+                ret.append(guess)
+                break
+
+    if size > 1:
+        return ret
+    else:
+        return ret[0]
+# end function
+
+
+def sampleFlatPriorTRAPPIST1(size=1, **kwargs):
+    """
+    Sample dMass, dSatXUVFrac, dSatXUVTime, dStopTime, and dXUVBeta from
+    uniform distributions over the full prior range.
+    """
+
+    ret = []
+    for ii in range(size):
+        while True:
+            guess = [np.random.uniform(low=0.07, high=0.11),
+                     np.random.uniform(low=-5.0, high=-1.0),
+                     np.random.uniform(low=0.1, high=12.0),
+                     np.random.uniform(low=0.1, high=12.0),
+                     np.random.uniform(low=-2.0, high=0.0)]
             if not np.isinf(LnPriorTRAPPIST1(guess, **kwargs)):
                 ret.append(guess)
                 break
