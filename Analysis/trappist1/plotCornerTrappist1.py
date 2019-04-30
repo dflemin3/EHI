@@ -22,10 +22,10 @@ mpl.rc('font',**{'family':'serif'})
 mpl.rc('text', usetex=True)
 
 # Path to data
-filename = "../../Data/TRAPPIST1/trappist1WRaymond2007EpsBolmont.h5"
+filename = "../../Data/TRAPPIST1/trappist1WDelta20EpsBolmontUniformPrior.h5"#"../../Data/TRAPPIST1/trappist1WRaymond2007EpsBolmont.h5"
 
 # Whether or not to plot blobs
-plotBlobs = True
+plotBlobs = False
 
 # Extract results
 if plotBlobs:
@@ -71,6 +71,7 @@ fig = corner.corner(samples, quantiles=[0.16, 0.5, 0.84], labels=labels,
                     show_titles=True, title_kwargs={"fontsize": 14})
 
 # Save!
-fig.savefig("../../Plots/trappist1CornerWRaymond2007EpsBolmont.png", bbox_inches="tight", dpi=200)
+fig.savefig("../../Plots/trapist1FlatPriors.png", bbox_inches="tight", dpi=200)
+#fig.savefig("../../Plots/trappist1CornerWRaymond2007EpsBolmont.png", bbox_inches="tight", dpi=200)
 
 # Done!

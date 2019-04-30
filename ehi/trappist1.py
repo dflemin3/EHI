@@ -168,6 +168,38 @@ def LnPriorTRAPPIST1(x, **kwargs):
 # end function
 
 
+def LnFlatPriorTRAPPIST1(x, **kwargs):
+    """
+    log flat prior
+    """
+
+    # Get the current vector
+    dMass, dSatXUVFrac, dSatXUVTime, dStopTime, dXUVBeta = x
+
+    # Uniform prior for stellar mass [Msun]
+    if (dMass < 0.07) or (dMass > 0.11):
+        return -np.inf
+
+    # Uniform prior on saturation timescale [100 Myr - 12 Gyr]
+    if (dSatXUVTime < 0.1) or (dSatXUVTime > 12.0):
+        return -np.inf
+
+    # Large bound for age of system [Gyr] informed by Burgasser et al. (2017)
+    if (dStopTime < 0.1) or (dStopTime > 12.0):
+        return -np.inf
+
+    # Hard bounds on XUVBeta to bracket realistic values
+    if (dXUVBeta < -2.0) or (dXUVBeta > 0.0):
+        return -np.inf
+
+    # Hard bound on log10 saturation fraction (log10)
+    if (dSatXUVFrac < -5) or (dSatXUVFrac > -1):
+        return -np.inf
+
+    return 0
+# end function
+
+
 def samplePriorTRAPPIST1(size=1, **kwargs):
     """
     Sample dMass, dSatXUVFrac, dSatXUVTime, dStopTime, and dXUVBeta from their
