@@ -408,7 +408,7 @@ kwargsTRAPPIST1 = {"PATH" : ".",
                    "LUM" : lumTrappist1,
                    "LUMSIG" : lumTrappist1Sig,
                    "LUMXUV" : LXUVTrappist1,
-                   "LUMXUVSIG" : LXUVTrappist1Sig
+                   "LUMXUVSIG" : LXUVTrappist1Sig,
                    "PLANETLIST" : ["trappist1b", "trappist1c", "trappist1d",
                                    "trappist1e", "trappist1f", "trappist1g",
                                    "trappist1h"],
