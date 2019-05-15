@@ -7,28 +7,32 @@ import numpy as np
 from scipy.stats import norm
 from . import utils
 
-__all__ = ["kwargsTRAPPIST1", "LnPriorTRAPPIST", "samplePriorTRAPPIST1"]
+__all__ = ["kwargsTRAPPIST1", "LnPriorTRAPPIST", "samplePriorTRAPPIST1",
+           "LnFlatPriorTRAPPIST", "sampleFlatPriorTRAPPIST1"]
 
 # Observational constraints
 
 # Stellar properties: Trappist1 in nearly solar metallicity, so the Baraffe+2015 tracks will be good
-lumTrappist1 = 0.000522           # Van Grootel et al. (2018) [Lsun]
-lumTrappist1Sig = 0.000019        # Van Grootel et al. (2018) [Lsun]
+lumTrappist1 = 0.000522               # Van Grootel et al. (2018) [Lsun]
+lumTrappist1Sig = 0.000019            # Van Grootel et al. (2018) [Lsun]
 
-radTrappist1 = 0.121              # Van Grootel et al. (2018) [Rsun]
-radTrappist1Sig = 0.003           # Van Grootel et al. (2018) [Rsun]
+radTrappist1 = 0.121                  # Van Grootel et al. (2018) [Rsun]
+radTrappist1Sig = 0.003               # Van Grootel et al. (2018) [Rsun]
 
-logLXUVTrappist1 = -6.4           # Wheatley et al. (2017)
-logLXUVTrappist1Sig = 0.1         # Wheatley et al. (2017)
+logLXUVTrappist1 = -6.4               # Wheatley et al. (2017), Van Grootel et al. (2018)
+logLXUVTrappist1Sig = 0.05            # Wheatley et al. (2017), Van Grootel et al. (2018)
 
-betaTrappist1 = -1.18             # Jackson et al. (2012)
-betaTrappist1Sig = 0.31           # Jackson et al. (2012)
+LXUVTrappist1 = 3.9e-7                # Wheatley et al. (2017), Van Grootel et al. (2018)
+LXUVTrappist1Sig = 0.5e-7             # Wheatley et al. (2017), Van Grootel et al. (2018)
 
-ageTrappist1 = 7.6                # Burgasser et al. (2017) [Gyr]
-ageTrappist1Sig = 2.2             # Burgasser et al. (2017) [Gyr]
+betaTrappist1 = -1.18                 # Jackson et al. (2012)
+betaTrappist1Sig = 0.31               # Jackson et al. (2012)
 
-fsatTrappist1 = -3.14             # Jackson et al. (2012)
-fsatTrappist1Sig = 0.37           # Jackson et al. (2012)
+ageTrappist1 = 7.6                    # Burgasser et al. (2017) [Gyr]
+ageTrappist1Sig = 2.2                 # Burgasser et al. (2017) [Gyr]
+
+fsatTrappist1 = -2.92                 # Wright et al. (2011) and Chadney et al. (2015)
+fsatTrappist1Sig = 0.26               # Wright et al. (2011) and Chadney et al. (2015)
 
 # Planet properties: Masses [Mearth], Radii [Rearth] and ecc from Grimm+2018,
 # Porbs from Gillon et al. (2017) and Luger et al. (2017)
@@ -126,6 +130,37 @@ radiusTrappist1hSig = 0.027
 
 ### Prior, likelihood, MCMC functions ###
 
+def LnFlatPriorTRAPPIST1(x, **kwargs):
+    """
+    log flat prior
+    """
+
+    # Get the current vector
+    dMass, dSatXUVFrac, dSatXUVTime, dStopTime, dXUVBeta = x
+
+    # Uniform prior for stellar mass [Msun]
+    if (dMass < 0.07) or (dMass > 0.11):
+        return -np.inf
+
+    # Uniform prior on saturation timescale [100 Myr - 12 Gyr]
+    if (dSatXUVTime < 0.1) or (dSatXUVTime > 12.0):
+        return -np.inf
+
+    # Large bound for age of system [Gyr] informed by Burgasser et al. (2017)
+    if (dStopTime < 0.1) or (dStopTime > 12.0):
+        return -np.inf
+
+    # Hard bounds on XUVBeta to bracket realistic values
+    if (dXUVBeta < -2.0) or (dXUVBeta > 0.0):
+        return -np.inf
+
+    # Hard bound on log10 saturation fraction (log10)
+    if (dSatXUVFrac < -5) or (dSatXUVFrac > -1):
+        return -np.inf
+
+    return 0
+# end function
+
 
 def LnPriorTRAPPIST1(x, **kwargs):
     """
@@ -165,38 +200,6 @@ def LnPriorTRAPPIST1(x, **kwargs):
     lnprior += norm.logpdf(dSatXUVFrac, fsatTrappist1, fsatTrappist1Sig)
 
     return lnprior
-# end function
-
-
-def LnFlatPriorTRAPPIST1(x, **kwargs):
-    """
-    log flat prior
-    """
-
-    # Get the current vector
-    dMass, dSatXUVFrac, dSatXUVTime, dStopTime, dXUVBeta = x
-
-    # Uniform prior for stellar mass [Msun]
-    if (dMass < 0.07) or (dMass > 0.11):
-        return -np.inf
-
-    # Uniform prior on saturation timescale [100 Myr - 12 Gyr]
-    if (dSatXUVTime < 0.1) or (dSatXUVTime > 12.0):
-        return -np.inf
-
-    # Large bound for age of system [Gyr] informed by Burgasser et al. (2017)
-    if (dStopTime < 0.1) or (dStopTime > 12.0):
-        return -np.inf
-
-    # Hard bounds on XUVBeta to bracket realistic values
-    if (dXUVBeta < -2.0) or (dXUVBeta > 0.0):
-        return -np.inf
-
-    # Hard bound on log10 saturation fraction (log10)
-    if (dSatXUVFrac < -5) or (dSatXUVFrac > -1):
-        return -np.inf
-
-    return 0
 # end function
 
 
@@ -404,8 +407,8 @@ kwargsTRAPPIST1 = {"PATH" : ".",
                    "PriorSample" : samplePriorTRAPPIST1,
                    "LUM" : lumTrappist1,
                    "LUMSIG" : lumTrappist1Sig,
-                   "LOGLUMXUV" : logLXUVTrappist1,
-                   "LOGLUMXUVSIG" : logLXUVTrappist1Sig,
+                   "LUMXUV" : LXUVTrappist1,
+                   "LUMXUVSIG" : LXUVTrappist1Sig
                    "PLANETLIST" : ["trappist1b", "trappist1c", "trappist1d",
                                    "trappist1e", "trappist1f", "trappist1g",
                                    "trappist1h"],
